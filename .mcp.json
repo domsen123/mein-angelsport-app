@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${MCP_CONTEXT7_API_KEY}"
+      }
+    },
+    "nuxt-ui": {
+      "type": "http",
+      "url": "https://ui.nuxt.com/mcp"
+    },
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "DATABASE_URI",
+        "--add-host=host.docker.internal:host-gateway",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://${NUXT_DATABASE_USER}:${NUXT_DATABASE_PASSWORD}@host.docker.internal:${NUXT_DATABASE_PORT}/${NUXT_DATABASE_NAME}"
+      }
+    }
+  }
+}

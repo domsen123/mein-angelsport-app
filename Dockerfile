@@ -1,0 +1,28 @@
+# Build Stage 1
+FROM docker-registry.dim.ve-ict.net/vinci-energies/node:latest AS build
+WORKDIR /app
+
+# Copy package.json and your lockfile, here we add pnpm-lock.yaml for illustration
+COPY package.json pnpm-lock.yaml .npmrc ./
+
+# Install dependencies
+RUN pnpm i
+
+# Copy the entire project
+COPY . ./
+
+# Build the project
+RUN pnpm run build
+
+# Build Stage 2
+
+FROM docker-registry.dim.ve-ict.net/vinci-energies/node:latest
+WORKDIR /app
+
+# Only `.output` folder is needed from the build stage
+COPY --from=build /app/.output/ ./
+COPY --from=build /app/server/config ./server/config
+COPY --from=build /app/server/database ./server/database
+COPY --from=build /app/drizzle.config.ts ./
+
+CMD ["node", "/app/server/index.mjs"]

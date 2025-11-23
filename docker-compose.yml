@@ -1,0 +1,36 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: angelsport-nuxt-app
+    restart: unless-stopped
+    environment:
+      NUXT_SITE_NAME: ${NUXT_SITE_NAME}
+      NUXT_SITE_URL: ${NUXT_SITE_URL}
+      NUXT_SITE_ENV: ${NUXT_SITE_ENV}
+      NUXT_DATABASE_HOST: ${NUXT_DATABASE_HOST}
+      NUXT_DATABASE_PORT: ${NUXT_DATABASE_PORT}
+      NUXT_DATABASE_NAME: ${NUXT_DATABASE_NAME}
+      NUXT_DATABASE_USER: ${NUXT_DATABASE_USER}
+      NUXT_DATABASE_PASSWORD: ${NUXT_DATABASE_PASSWORD}
+      NUXT_AUTH_SECRET: ${NUXT_AUTH_SECRET}
+    ports:
+      - '${NUXT_PORT:-3000}:3000'
+
+  postgres:
+    image: postgres:18
+    container_name: angelsport-postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${NUXT_DATABASE_NAME}
+      POSTGRES_USER: ${NUXT_DATABASE_USER}
+      POSTGRES_PASSWORD: ${NUXT_DATABASE_PASSWORD}
+    ports:
+      - '${NUXT_DATABASE_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./_init/init-postgres.sql:/docker-entrypoint-initdb.d/init-pg.sql
+
+volumes:
+  postgres_data:

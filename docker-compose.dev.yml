@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: angelsport-postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${NUXT_DATABASE_NAME}
+      POSTGRES_USER: ${NUXT_DATABASE_USER}
+      POSTGRES_PASSWORD: ${NUXT_DATABASE_PASSWORD}
+    ports:
+      - '${NUXT_DATABASE_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./_init/init-postgres.sql:/docker-entrypoint-initdb.d/init-pg.sql
+
+volumes:
+  postgres_data:

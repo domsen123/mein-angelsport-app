@@ -1,0 +1,23 @@
+import type { DatabaseClient } from '~~/server/database/client'
+import { APIError } from 'better-auth'
+import { doDatabaseOperation } from '~~/server/database/helper'
+
+export const isExecutorClubMember = async (
+  clubId: string,
+  context: ExecutionContext,
+  tx?: DatabaseClient,
+) => doDatabaseOperation(async (db) => {
+  const clubMemberRecord = await db.query.clubMember.findFirst({
+    where: (member, { eq, and }) => and(
+      eq(member.clubId, clubId),
+      eq(member.userId, context.userId),
+    ),
+  })
+
+  if (!clubMemberRecord) {
+    throw new APIError('FORBIDDEN', {
+      message: 'Nur Vereinsmitglieder können diese Aktion ausführen.',
+    })
+  }
+  return clubMemberRecord
+}, tx)
