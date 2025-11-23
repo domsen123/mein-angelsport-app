@@ -1,4 +1,5 @@
 import type { DatabaseClient } from '~~/server/database/client'
+import type { ExecutionContext } from '~~/server/types/ExecutionContext'
 import { APIError } from 'better-auth'
 import { doDatabaseOperation } from '~~/server/database/helper'
 

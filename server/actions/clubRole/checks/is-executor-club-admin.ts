@@ -1,4 +1,5 @@
 import type { DatabaseClient } from '~~/server/database/client'
+import type { ExecutionContext } from '~~/server/types/ExecutionContext'
 import { APIError } from 'better-auth'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 import { doDatabaseOperation } from '~~/server/database/helper'
@@ -26,7 +27,7 @@ export const isExecutorClubAdmin = async (
     .where(
       and(
         eq(clubMemberRole.memberId, isClubMember.id),
-        eq(clubRole.isAdmin, true),
+        eq(clubRole.isClubAdmin, true),
       ),
     )
   if (roles.length === 0) {

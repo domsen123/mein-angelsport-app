@@ -12,16 +12,16 @@ export const CreateInitalClubMemberCommandSchema = z.object({
 
   firstName: z.string().min(1).max(30),
   lastName: z.string().min(1).max(30),
-  birthdate: z.date().optional(),
+  birthdate: z.date().optional().nullable(),
 
-  street: z.string().min(5).max(100).optional(),
-  postalCode: z.string().min(4).max(10).optional(),
-  city: z.string().min(2).max(50).optional(),
-  country: z.string().min(2).max(50).optional(),
+  street: z.string().min(5).max(100).optional().nullable(),
+  postalCode: z.string().min(4).max(10).optional().nullable(),
+  city: z.string().min(2).max(50).optional().nullable(),
+  country: z.string().min(2).max(50).optional().nullable(),
 
   preferredInvoicingMethod: z.enum(['email', 'postal_mail']).optional().default('email'),
-  email: z.email().optional(),
-  phone: z.string().min(5).max(20).optional(),
+  email: z.email().optional().nullable(),
+  phone: z.string().min(5).max(20).optional().nullable(),
 })
 
 export type CreateInitalClubMemberCommand = z.infer<typeof CreateInitalClubMemberCommandSchema>

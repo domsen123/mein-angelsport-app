@@ -35,21 +35,27 @@ export const auth = betterAuth({
     additionalFields: {
       firstName: {
         type: 'string',
+        required: false,
       },
       lastName: {
         type: 'string',
+        required: false,
       },
       street: {
         type: 'string',
+        required: false,
       },
       postalCode: {
         type: 'string',
+        required: false,
       },
       city: {
         type: 'string',
+        required: false,
       },
       country: {
         type: 'string',
+        required: false,
       },
     },
     changeEmail: {

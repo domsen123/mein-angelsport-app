@@ -21,7 +21,7 @@ export const clubMember = pgTable('club_member', {
   id: text('id').primaryKey(),
 
   clubId: text('club_id').references(() => club.id, { onDelete: 'cascade' }).notNull(),
-  userId: text('user_id').references(() => club.id, { onDelete: 'set null' }),
+  userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -77,6 +77,42 @@ export const clubMemberRole = pgTable('club_member_role', {
   primaryKey({ columns: [t.memberId, t.roleId] }),
 ])
 
+export const clubEvent = pgTable('club_event', {
+  id: text('id').primaryKey(),
+
+  clubId: text('club_id').references(() => club.id, { onDelete: 'cascade' }).notNull(),
+
+  name: text('name').notNull(),
+  description: text('description'),
+
+  content: text('content'),
+
+  dateStart: timestamp('date_start', { mode: 'date', withTimezone: true }).notNull(),
+  dateEnd: timestamp('date_end', { mode: 'date', withTimezone: true }),
+
+  isWorkDuty: boolean('is_work_duty').default(false).notNull(),
+  isPublic: boolean('is_public').default(true).notNull(),
+
+  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+})
+
+export const clubEventAttendance = pgTable('club_event_attendance', {
+  eventId: text('event_id').references(() => clubEvent.id, { onDelete: 'cascade' }).notNull(),
+  memberId: text('member_id').references(() => clubMember.id, { onDelete: 'cascade' }).notNull(),
+
+  status: text('status', { enum: ['invited', 'declined', 'accepted', 'attended'] }).notNull(),
+
+  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+}, t => [
+  primaryKey({ columns: [t.eventId, t.memberId] }),
+])
+
 // RELATIONS
 export const clubRoleRelation = relations(clubRole, ({ many, one }) => ({
   club: one(club, { fields: [clubRole.clubId], references: [club.id] }),
@@ -92,4 +128,14 @@ export const clubMemberRelations = relations(clubMember, ({ one, many }) => ({
 export const clubMemberRoleRelations = relations(clubMemberRole, ({ one }) => ({
   member: one(clubMember, { fields: [clubMemberRole.memberId], references: [clubMember.id] }),
   role: one(clubRole, { fields: [clubMemberRole.roleId], references: [clubRole.id] }),
+}))
+
+export const clubEventRelations = relations(clubEvent, ({ one, many }) => ({
+  club: one(club, { fields: [clubEvent.clubId], references: [club.id] }),
+  attendances: many(clubEventAttendance),
+}))
+
+export const clubEventAttendanceRelations = relations(clubEventAttendance, ({ one }) => ({
+  event: one(clubEvent, { fields: [clubEventAttendance.eventId], references: [clubEvent.id] }),
+  member: one(clubMember, { fields: [clubEventAttendance.memberId], references: [clubMember.id] }),
 }))
