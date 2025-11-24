@@ -20,11 +20,21 @@ export const _getClubRolesByClubId = async (
 
   // fetch roles
   const roles = await db.query.clubRole.findMany({
+    with: {
+      members: {
+        columns: {
+          memberId: true,
+        },
+      },
+    },
     where: (role, { eq }) => eq(role.clubId, data.clubId),
     orderBy: (role, { asc }) => [asc(role.name)],
   })
 
-  return roles
+  return roles.map(({ members, ...role }) => ({
+    ...role,
+    memberCount: members.length,
+  }))
 }, tx)
 
 export const getClubRolesByClubId = async (
