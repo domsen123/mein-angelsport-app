@@ -1,6 +1,13 @@
 import type { PaginationParams } from '~~/server/utils/validation'
 
-export const usePagination = () => {
+export interface ClientPaginationParams {
+  page: Ref<number>
+  pageSize: Ref<number>
+  searchTerm: Ref<string>
+  pagination: ComputedRef<PaginationParams>
+}
+
+export const usePagination = (): ClientPaginationParams => {
   const page = useRouteQuery('page', '1', { transform: Number, mode: 'push' })
   const pageSize = useRouteQuery('pageSize', '10', { transform: Number, mode: 'push' })
   const searchTerm = ref<string>('')

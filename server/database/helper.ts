@@ -1,10 +1,8 @@
+import type { SQL } from 'drizzle-orm'
 import type { PgColumn, PgTable, TableConfig } from 'drizzle-orm/pg-core'
 import type { DatabaseClient } from './client'
-
-import { eq, sql } from 'drizzle-orm'
-
+import { and, eq, ilike, or, sql, Table } from 'drizzle-orm'
 import { getDatabase } from './client'
-import { user } from './schema'
 
 type TableWithSlug = PgTable<TableConfig> & {
   slug: PgColumn
@@ -90,3 +88,26 @@ export const ensureUniqueSlug = async (slug: string, tbl: TableWithSlug, tx?: Da
     // Return slug with next available number
     return `${slug}-${highestSuffix + 1}`
   }, tx)
+
+/**
+ * Builds a search filter for multiple columns and search terms.
+ * - OR between columns (term can match any column)
+ * - AND between search parts (all words must be found somewhere)
+ */
+export const buildSearchFilter = (
+  searchTerm: string | undefined,
+  columns: PgColumn[],
+): SQL | undefined => {
+  if (!searchTerm?.trim())
+    return undefined
+
+  const searchParts = searchTerm.trim().split(' ').filter(Boolean)
+  if (searchParts.length === 0)
+    return undefined
+
+  return and(
+    ...searchParts.map(part =>
+      or(...columns.map(col => ilike(col, `%${part}%`))),
+    ),
+  )
+}

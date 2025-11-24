@@ -10,17 +10,16 @@ export const useClub = () => {
   const isClubMember = computed(() => club.value?.membership.roles && club.value?.membership.roles.length > 0)
   const isClubAdmin = computed(() => club.value?.membership.hasAdminRole ?? false)
 
+  const clubMembers = useClubMember()
+
   const getEvents = () => useEvent().byClubId(club.value?.id)
   const getWaters = () => useWater().byClubId(club.value?.id)
   const getRoles = () => useClubRole().byClubId(club.value?.id)
-  const getMembers = () => useClubMember().byClubId(computed(() => {
-    const pagination = usePagination()
 
-    return {
-      clubId: club.value?.id,
-      pagination: pagination.pagination.value,
-    }
-  }))
+  const getMembers = (pagination: MaybeRefOrGetter<ClientPaginationParams['pagination']>) => clubMembers.byClubId({
+    clubId: club.value?.id,
+    pagination: pagination.value,
+  })
 
   return {
     club,

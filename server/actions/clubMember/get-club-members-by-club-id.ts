@@ -1,8 +1,10 @@
+import type { SQL } from 'drizzle-orm'
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { asc, desc, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { doDatabaseOperation } from '~~/server/database/helper'
+import { buildSearchFilter, doDatabaseOperation } from '~~/server/database/helper'
+import { clubMember } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
 export const GetClubMembersByClubIdCommandSchema = z.object({
@@ -19,11 +21,23 @@ export const _getClubMembersByClubId = async (
 ) => doDatabaseOperation(async (db) => {
   // validation
   const data = GetClubMembersByClubIdCommandSchema.parse(input)
+  const { clubId, pagination } = data
 
-  const { pagination } = data
+  // Build filters
+  const searchFilter = buildSearchFilter(pagination.searchTerm, [
+    clubMember.firstName,
+    clubMember.lastName,
+    clubMember.email,
+  ])
 
-  // fetch members
+  const baseFilter = and(eq(clubMember.clubId, clubId), searchFilter)
+
+  // Fetch members
   const members = await db.query.clubMember.findMany({
+    where: baseFilter,
+    orderBy: (member, { asc }) => [asc(member.createdAt)],
+    offset: pagination.pageSize * (pagination.page - 1),
+    limit: pagination.pageSize,
     with: {
       user: {
         columns: {
@@ -53,19 +67,27 @@ export const _getClubMembersByClubId = async (
         },
       },
     },
-    where: (member, { eq }) => eq(member.clubId, data.clubId),
-    orderBy: (member, { asc }) => [asc(member.createdAt)],
-    offset: pagination.pageSize * (pagination.page - 1),
-    limit: pagination.pageSize,
   })
 
-  return members.map((member) => {
+  // Count total
+  const totalItems = await db.$count(clubMember, baseFilter)
+
+  const items = members.map((member) => {
     if (member.user) {
       Object.assign(member, member.user)
       Reflect.deleteProperty(member, 'user')
     }
     return member
   })
+
+  return {
+    meta: {
+      totalItems,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    },
+    items,
+  }
 }, tx)
 
 export const getClubMembersByClubId = async (

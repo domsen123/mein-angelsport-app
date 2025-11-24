@@ -2,8 +2,11 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const { getMembers } = useClub()
-
-const { data } = getMembers()
+const { pagination, searchTerm } = usePagination()
+watch(pagination, () => {
+  console.log('Pagination changed:', pagination.value)
+})
+const { data } = getMembers(pagination)
 
 const UBadge = resolveComponent('UBadge')
 
@@ -32,8 +35,13 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <div>
-    <UTable :columns="columns" :data="data" />
+  <div class="space-y-4">
+    <div class="flex">
+      <div>
+        <UInput v-model="searchTerm" placeholder="Mitglieder suchen..." />
+      </div>
+    </div>
+    <UTable :columns="columns" :data="data?.items" />
 
     <pre class="text-xs" v-text="data" />
   </div>
