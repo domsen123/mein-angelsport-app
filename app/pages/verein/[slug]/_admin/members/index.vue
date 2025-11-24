@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const { getMembers } = useClub()
-const { pagination, searchTerm } = usePagination()
+const { pagination, searchTerm, page } = usePagination()
 watch(pagination, () => {
   console.log('Pagination changed:', pagination.value)
 })
@@ -38,12 +38,17 @@ const columns: TableColumn<any>[] = [
   <div class="space-y-4">
     <div class="flex">
       <div>
-        <UInput v-model="searchTerm" placeholder="Mitglieder suchen..." />
+        <UInput v-model="searchTerm" placeholder="Mitglieder suchen..." leading-icon="i-lucide-search" />
       </div>
     </div>
     <UTable :columns="columns" :data="data?.items" />
 
-    <pre class="text-xs" v-text="data" />
+    <div class="flex">
+      <div></div>
+      <div class="ml-auto">
+        <UPagination v-model:page="page" :total="data?.meta.totalItems" />
+      </div>
+    </div>
   </div>
 </template>
 

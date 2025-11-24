@@ -2,7 +2,7 @@ import type { GetClubMembersByClubIdCommandInput } from '~~/server/actions/clubM
 import { useClubMembersByClubIdQuery } from '~/actions/clubMembers/queries'
 
 export const useClubMember = () => {
-  const byClubId = (options: MaybeRefOrGetter<Partial<GetClubMembersByClubIdCommandInput>>) => useQuery(useClubMembersByClubIdQuery, ({
+  const byClubId = (options: MaybeRefOrGetter<Partial<GetClubMembersByClubIdCommandInput>>) => useQuery(useClubMembersByClubIdQuery, () => ({
     clubId: toValue(options).clubId!,
     pagination: toValue(options).pagination!,
   }))
