@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm'
 import type { PgColumn, PgTable, TableConfig } from 'drizzle-orm/pg-core'
 import type { DatabaseClient } from './client'
-import { and, eq, ilike, or, sql, Table } from 'drizzle-orm'
+import { and, eq, ilike, or, sql } from 'drizzle-orm'
 import { getDatabase } from './client'
 
 type TableWithSlug = PgTable<TableConfig> & {

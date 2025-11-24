@@ -1,7 +1,6 @@
-import type { SQL } from 'drizzle-orm'
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { buildSearchFilter, doDatabaseOperation } from '~~/server/database/helper'
 import { clubMember } from '~~/server/database/schema'
