@@ -19,6 +19,7 @@ export const _getClubBySlug = async (
       message: 'Der angeforderte Verein wurde nicht gefunden.',
     })
   }
+  // membership is fetched in _getClubById
   return await _getClubById(clubRecord.id, context, db)
 }, tx)
 

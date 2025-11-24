@@ -1,11 +1,9 @@
 <script lang="ts" setup>
 definePageMeta({
-  redirect: () => '/verein/fv-burlafingen',
+  layout: 'auth',
 })
 </script>
 
 <template>
-  <div></div>
+  <NuxtPage />
 </template>
-
-<style></style>

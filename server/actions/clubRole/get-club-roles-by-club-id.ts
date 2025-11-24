@@ -1,0 +1,37 @@
+import type { DatabaseClient } from '~~/server/database/client'
+import type { ExecutionContext } from '~~/server/types/ExecutionContext'
+import z from 'zod'
+import { doDatabaseOperation } from '~~/server/database/helper'
+import { isExecutorClubAdmin } from './checks/is-executor-club-admin'
+
+export const GetClubRolesByClubIdCommandSchema = z.object({
+  clubId: ulidSchema,
+})
+
+export type GetClubRolesByClubIdCommandInput = z.infer<typeof GetClubRolesByClubIdCommandSchema>
+
+export const _getClubRolesByClubId = async (
+  input: GetClubRolesByClubIdCommandInput,
+  context: ExecutionContext,
+  tx?: DatabaseClient,
+) => doDatabaseOperation(async (db) => {
+  // validation
+  const data = GetClubRolesByClubIdCommandSchema.parse(input)
+
+  // fetch roles
+  const roles = await db.query.clubRole.findMany({
+    where: (role, { eq }) => eq(role.clubId, data.clubId),
+    orderBy: (role, { asc }) => [asc(role.name)],
+  })
+
+  return roles
+}, tx)
+
+export const getClubRolesByClubId = async (
+  input: GetClubRolesByClubIdCommandInput,
+  context: ExecutionContext,
+  tx?: DatabaseClient,
+) => doDatabaseOperation(async (db) => {
+  await isExecutorClubAdmin(input.clubId, context, db)
+  return _getClubRolesByClubId(input, context, db)
+}, tx)

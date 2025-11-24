@@ -48,3 +48,10 @@ export function createExecutionContext(event: H3Event & { context: { user: AppUs
     timestamp: new Date(),
   }
 }
+
+export const createAnonymousExecutionContext = (): ExecutionContext => {
+  return {
+    userId: '',
+    timestamp: new Date(),
+  }
+}

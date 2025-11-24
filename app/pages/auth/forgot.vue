@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-definePageMeta({
-  redirect: () => '/verein/fv-burlafingen',
-})
+
 </script>
 
 <template>

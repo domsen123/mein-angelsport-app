@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm'
 import { pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 import { user } from './auth.schema'
 import { club } from './club.schema'
@@ -26,3 +27,19 @@ export const club_water = pgTable('club_water', {
 }, t => [
   primaryKey({ columns: [t.clubId, t.waterId] }),
 ])
+
+// Relations
+export const waterRelations = relations(water, ({ many }) => ({
+  clubs: many(club_water),
+}))
+
+export const clubWaterRelations = relations(club_water, ({ one }) => ({
+  club: one(club, {
+    fields: [club_water.clubId],
+    references: [club.id],
+  }),
+  water: one(water, {
+    fields: [club_water.waterId],
+    references: [water.id],
+  }),
+}))

@@ -13,11 +13,10 @@ const { currentUser } = storeToRefs(authStore)
       </template>
       <template #right>
         <template v-if="currentUser">
-          <AppUserMenu class="max-w-44" />
         </template>
         <template v-else>
-          <UButton label="Registrieren" variant="ghost" to="/auth/sign-up" />
-          <UButton label="Anmelden" variant="subtle" to="/auth/sign-in" />
+          <UButton label="Registrieren" variant="ghost" to="/auth/register" />
+          <UButton label="Anmelden" variant="subtle" to="/auth/login" />
         </template>
       </template>
     </UHeader>
