@@ -54,3 +54,7 @@ export const getClubRolesByClubId = async (
   await isExecutorClubAdmin(input.clubId, context, db)
   return _getClubRolesByClubId(input, context, db)
 }, tx)
+
+// Response types for frontend usage
+export type GetClubRolesByClubIdResponse = Awaited<ReturnType<typeof _getClubRolesByClubId>>
+export type ClubRoleItem = GetClubRolesByClubIdResponse['items'][number]

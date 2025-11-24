@@ -2,30 +2,54 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const { getRoles } = useClub()
-const { pagination, searchTerm, page } = usePagination()
+const { pagination, searchTerm, page, sorting } = usePagination()
 
 const { data } = getRoles(pagination)
 
+type RoleItem = NonNullable<typeof data.value>['items'][number]
+
+const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
 
-const columns: TableColumn<any>[] = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'description', header: 'Beschreibung' },
-  { accessorKey: 'isClubAdmin', header: 'Admin', cell: ({ row }) => {
-    return h(UIcon, {
-      name: row.original.isExemptFromWorkDuties ? 'i-lucide-check' : 'i-lucide-cross',
-      class: ['w-5 h-5', row.original.isExemptFromWorkDuties ? 'text-green-500' : 'text-red-500'],
-    })
-  } },
-  { accessorKey: 'isExemptFromWorkDuties', header: 'Von Arbeitsdiensten befreit', cell: ({ row }) => {
-    return h(UIcon, {
-      name: row.original.isExemptFromWorkDuties ? 'i-lucide-check' : 'i-lucide-cross',
-      class: ['w-5 h-5', row.original.isExemptFromWorkDuties ? 'text-green-500' : 'text-red-500'],
-    })
-  } },
-  { accessorKey: 'memberCount', header: 'Anzahl Mitglieder', cell: ({ row }) => {
-    return row.original.memberCount ?? 0
-  } },
+const columns: TableColumn<RoleItem>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => useSortableHeader(column, 'Name', UButton),
+  },
+  {
+    accessorKey: 'description',
+    header: 'Beschreibung',
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'isClubAdmin',
+    header: ({ column }) => useSortableHeader(column, 'Admin', UButton),
+    cell: ({ row }) => {
+      return h(UIcon, {
+        name: row.original.isClubAdmin ? 'i-lucide-check' : 'i-lucide-x',
+        class: ['w-5 h-5', row.original.isClubAdmin ? 'text-green-500' : 'text-red-500'],
+      })
+    },
+  },
+  {
+    accessorKey: 'isExemptFromWorkDuties',
+    header: 'Von Arbeitsdiensten befreit',
+    enableSorting: false,
+    cell: ({ row }) => {
+      return h(UIcon, {
+        name: row.original.isExemptFromWorkDuties ? 'i-lucide-check' : 'i-lucide-x',
+        class: ['w-5 h-5', row.original.isExemptFromWorkDuties ? 'text-green-500' : 'text-red-500'],
+      })
+    },
+  },
+  {
+    accessorKey: 'memberCount',
+    header: 'Anzahl Mitglieder',
+    enableSorting: false,
+    cell: ({ row }) => {
+      return row.original.memberCount ?? 0
+    },
+  },
 ]
 </script>
 
@@ -36,7 +60,12 @@ const columns: TableColumn<any>[] = [
         <UInput v-model="searchTerm" placeholder="Gruppen suchen..." leading-icon="i-lucide-search" />
       </div>
     </div>
-    <UTable :columns="columns" :data="data?.items" />
+
+    <UTable
+      v-model:sorting="sorting"
+      :columns="columns"
+      :data="data?.items"
+    />
 
     <div class="flex">
       <div></div>

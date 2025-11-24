@@ -1,9 +1,11 @@
+import type { SortingState } from '@tanstack/vue-table'
 import type { PaginationParams } from '~~/server/utils/validation'
 
 export interface ClientPaginationParams {
   page: Ref<number>
   pageSize: Ref<number>
   searchTerm: Ref<string>
+  sorting: Ref<SortingState>
   pagination: ComputedRef<PaginationParams>
 }
 
@@ -15,14 +17,37 @@ export const usePagination = (): ClientPaginationParams => {
   const debouncedSearchTerm = ref(searchTerm.value)
   const routerSearchTerm = useRouteQuery<string>('searchTerm', '', { mode: 'push' })
 
-  const pagination = computed<PaginationParams>(() => {
-    return {
-      page: page.value,
-      pageSize: pageSize.value,
-      searchTerm: debouncedSearchTerm.value || undefined,
-      orderBy: [],
-    }
-  })
+  // Sorting state synced with URL
+  const routerOrderBy = useRouteQuery<string>('orderBy', '', { mode: 'push' })
+
+  // Convert URL string to SortingState on init
+  const sorting = ref<SortingState>(
+    routerOrderBy.value
+      ? routerOrderBy.value.split(',').filter(Boolean).map(s => ({
+          id: s.startsWith('-') ? s.slice(1) : s,
+          desc: s.startsWith('-'),
+        }))
+      : [],
+  )
+
+  // Convert SortingState to server format ["field", "-field"]
+  const orderBy = computed(() =>
+    sorting.value.map(s => s.desc ? `-${s.id}` : s.id),
+  )
+
+  // Sync sorting changes to URL
+  watch(sorting, (newSorting) => {
+    routerOrderBy.value = newSorting
+      .map(s => s.desc ? `-${s.id}` : s.id)
+      .join(',') || ''
+  }, { deep: true })
+
+  const pagination = computed<PaginationParams>(() => ({
+    page: page.value,
+    pageSize: pageSize.value,
+    searchTerm: debouncedSearchTerm.value || undefined,
+    orderBy: orderBy.value,
+  }))
 
   debouncedWatch(searchTerm, () => {
     page.value = 1
@@ -34,6 +59,7 @@ export const usePagination = (): ClientPaginationParams => {
     page,
     pageSize,
     searchTerm,
+    sorting,
     pagination,
   }
 }

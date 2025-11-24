@@ -40,7 +40,11 @@ export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(15),
   searchTerm: z.string().max(100).default('').optional(),
-  orderBy: z.array(z.string()).default([]).optional(),
+  orderBy: z.preprocess(
+    // Handle URL query param: string -> array, empty string -> empty array
+    val => (typeof val === 'string' ? (val ? val.split(',') : []) : val),
+    z.array(z.string()).default([]).optional(),
+  ),
 })
 
 export type PaginationParams = z.infer<typeof paginationSchema>
