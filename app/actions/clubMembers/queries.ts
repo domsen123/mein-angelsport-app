@@ -3,7 +3,12 @@ import { useClubMemberClient } from './api'
 
 export const CLUB_MEMBER_QUERY_KEYS = {
   root: ['club-members'] as const,
-  getClubMembersByClubId: (args: GetClubMembersByClubIdCommandInput) => [...CLUB_MEMBER_QUERY_KEYS.root, 'by-club-id', args.clubId, JSON.stringify(args.pagination)] as const,
+  getClubMembersByClubId: (args: GetClubMembersByClubIdCommandInput) => [
+    ...CLUB_MEMBER_QUERY_KEYS.root,
+    'by-club-id',
+    args.clubId,
+    JSON.stringify(args.pagination),
+  ] as const,
 }
 
 export const useClubMembersByClubIdQuery = ({ clubId, pagination }: GetClubMembersByClubIdCommandInput) => defineQueryOptions({

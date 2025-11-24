@@ -3,9 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 
 const { getMembers } = useClub()
 const { pagination, searchTerm, page } = usePagination()
-watch(pagination, () => {
-  console.log('Pagination changed:', pagination.value)
-})
+
 const { data } = getMembers(pagination)
 
 const UBadge = resolveComponent('UBadge')

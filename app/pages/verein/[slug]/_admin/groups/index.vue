@@ -2,8 +2,9 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const { getRoles } = useClub()
+const { pagination, searchTerm, page } = usePagination()
 
-const { data } = getRoles()
+const { data } = getRoles(pagination)
 
 const UIcon = resolveComponent('UIcon')
 
@@ -29,8 +30,20 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <div>
-    <UTable :columns="columns" :data="data" />
+  <div class="space-y-4">
+    <div class="flex">
+      <div>
+        <UInput v-model="searchTerm" placeholder="Gruppen suchen..." leading-icon="i-lucide-search" />
+      </div>
+    </div>
+    <UTable :columns="columns" :data="data?.items" />
+
+    <div class="flex">
+      <div></div>
+      <div class="ml-auto">
+        <UPagination v-model:page="page" :total="data?.meta.totalItems" />
+      </div>
+    </div>
   </div>
 </template>
 

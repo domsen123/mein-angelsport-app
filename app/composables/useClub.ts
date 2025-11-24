@@ -1,6 +1,7 @@
 import z from 'zod'
 import { useClubBySlugQuery } from '~/actions/club/queries'
 import { useClubMembersByClubIdQuery } from '~/actions/clubMembers/queries'
+import { useClubRolesByClubIdQuery } from '~/actions/clubRoles/queries'
 
 export const useClub = () => {
   const slug = useRouteParams('slug', '')
@@ -14,7 +15,11 @@ export const useClub = () => {
 
   const getEvents = () => useEvent().byClubId(club.value?.id)
   const getWaters = () => useWater().byClubId(club.value?.id)
-  const getRoles = () => useClubRole().byClubId(club.value?.id)
+
+  const getRoles = (pagination: ClientPaginationParams['pagination']) => useQuery(useClubRolesByClubIdQuery, () => ({
+    clubId: club.value!.id,
+    pagination: pagination.value,
+  }))
 
   const getMembers = (pagination: ClientPaginationParams['pagination']) => useQuery(useClubMembersByClubIdQuery, () => ({
     clubId: club.value!.id,
