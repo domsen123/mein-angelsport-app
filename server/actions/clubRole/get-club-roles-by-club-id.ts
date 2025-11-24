@@ -1,8 +1,9 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import z from 'zod'
-import { buildSearchFilter, doDatabaseOperation } from '~~/server/database/helper'
+import { doDatabaseOperation } from '~~/server/database/helper'
+import { paginateQuery } from '~~/server/database/pagination'
 import { clubRole } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from './checks/is-executor-club-admin'
 
@@ -18,48 +19,31 @@ export const _getClubRolesByClubId = async (
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
-  // validation
   const data = GetClubRolesByClubIdCommandSchema.parse(input)
   const { clubId, pagination } = data
 
-  // build filters
-  const searchFilter = buildSearchFilter(pagination.searchTerm, [
-    clubRole.name,
-  ])
-
-  const baseFilter = and(eq(clubRole.clubId, clubId), searchFilter)
-
-  // fetch roles
-  const roles = await db.query.clubRole.findMany({
-    where: baseFilter,
-    orderBy: (member, { asc }) => [asc(member.createdAt)],
-    offset: pagination.pageSize * (pagination.page - 1),
-    limit: pagination.pageSize,
+  const result = await paginateQuery(db, clubRole, 'clubRole', pagination, {
+    searchableColumns: [clubRole.name],
+    sortableColumns: {
+      name: clubRole.name,
+      createdAt: clubRole.createdAt,
+      isClubAdmin: clubRole.isClubAdmin,
+    },
+    baseFilter: eq(clubRole.clubId, clubId),
     with: {
       members: {
-        columns: {
-          memberId: true,
-        },
+        columns: { memberId: true },
       },
     },
   })
 
-  // Count total
-  const totalItems = await db.$count(clubRole, baseFilter)
-
-  const items = roles.map(({ members, ...role }) => ({
+  // Transform: add memberCount from members relation
+  const items = result.items.map(({ members, ...role }) => ({
     ...role,
     memberCount: members.length,
   }))
 
-  return {
-    meta: {
-      totalItems,
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-    },
-    items,
-  }
+  return { ...result, items }
 }, tx)
 
 export const getClubRolesByClubId = async (

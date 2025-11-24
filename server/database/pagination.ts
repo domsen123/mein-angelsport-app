@@ -130,6 +130,7 @@ export async function paginateQuery<
     baseFilter,
     with: withRelations,
   } = config
+  // const tableName = getTableName(table) as TTableName
 
   // Build search filter from searchTerm
   const searchFilter = searchableColumns?.length

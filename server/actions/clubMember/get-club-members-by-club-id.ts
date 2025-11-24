@@ -1,8 +1,9 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { buildSearchFilter, doDatabaseOperation } from '~~/server/database/helper'
+import { doDatabaseOperation } from '~~/server/database/helper'
+import { paginateQuery } from '~~/server/database/pagination'
 import { clubMember } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
@@ -18,25 +19,18 @@ export const _getClubMembersByClubId = async (
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
-  // validation
   const data = GetClubMembersByClubIdCommandSchema.parse(input)
   const { clubId, pagination } = data
 
-  // Build filters
-  const searchFilter = buildSearchFilter(pagination.searchTerm, [
-    clubMember.firstName,
-    clubMember.lastName,
-    clubMember.email,
-  ])
-
-  const baseFilter = and(eq(clubMember.clubId, clubId), searchFilter)
-
-  // Fetch members
-  const members = await db.query.clubMember.findMany({
-    where: baseFilter,
-    orderBy: (member, { asc }) => [asc(member.createdAt)],
-    offset: pagination.pageSize * (pagination.page - 1),
-    limit: pagination.pageSize,
+  const result = await paginateQuery(db, clubMember, 'clubMember', pagination, {
+    searchableColumns: [clubMember.firstName, clubMember.lastName, clubMember.email],
+    sortableColumns: {
+      firstName: clubMember.firstName,
+      lastName: clubMember.lastName,
+      email: clubMember.email,
+      createdAt: clubMember.createdAt,
+    },
+    baseFilter: eq(clubMember.clubId, clubId),
     with: {
       user: {
         columns: {
@@ -51,27 +45,18 @@ export const _getClubMembersByClubId = async (
         },
       },
       roles: {
-        columns: {
-          memberId: true,
-          roleId: true,
-        },
+        columns: { memberId: true, roleId: true },
         with: {
           role: {
-            columns: {
-              id: true,
-              name: true,
-              isClubAdmin: true,
-            },
+            columns: { id: true, name: true, isClubAdmin: true },
           },
         },
       },
     },
   })
 
-  // Count total
-  const totalItems = await db.$count(clubMember, baseFilter)
-
-  const items = members.map((member) => {
+  // Flatten user data into member
+  const items = result.items.map((member) => {
     if (member.user) {
       Object.assign(member, member.user)
       Reflect.deleteProperty(member, 'user')
@@ -79,14 +64,7 @@ export const _getClubMembersByClubId = async (
     return member
   })
 
-  return {
-    meta: {
-      totalItems,
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-    },
-    items,
-  }
+  return { ...result, items }
 }, tx)
 
 export const getClubMembersByClubId = async (
