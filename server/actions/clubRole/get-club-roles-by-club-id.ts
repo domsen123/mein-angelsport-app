@@ -6,6 +6,7 @@ import { isExecutorClubAdmin } from './checks/is-executor-club-admin'
 
 export const GetClubRolesByClubIdCommandSchema = z.object({
   clubId: ulidSchema,
+  pagination: paginationSchema.optional(),
 })
 
 export type GetClubRolesByClubIdCommandInput = z.infer<typeof GetClubRolesByClubIdCommandSchema>

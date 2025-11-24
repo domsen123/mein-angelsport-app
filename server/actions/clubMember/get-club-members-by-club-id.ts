@@ -1,12 +1,13 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
+import { asc, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
 export const GetClubMembersByClubIdCommandSchema = z.object({
   clubId: ulidSchema,
-  pagination: paginationSchema.optional(),
+  pagination: paginationSchema,
 })
 
 export type GetClubMembersByClubIdCommandInput = z.infer<typeof GetClubMembersByClubIdCommandSchema>
@@ -18,6 +19,8 @@ export const _getClubMembersByClubId = async (
 ) => doDatabaseOperation(async (db) => {
   // validation
   const data = GetClubMembersByClubIdCommandSchema.parse(input)
+
+  const { pagination } = data
 
   // fetch members
   const members = await db.query.clubMember.findMany({
@@ -52,6 +55,8 @@ export const _getClubMembersByClubId = async (
     },
     where: (member, { eq }) => eq(member.clubId, data.clubId),
     orderBy: (member, { asc }) => [asc(member.createdAt)],
+    offset: pagination.pageSize * (pagination.page - 1),
+    limit: pagination.pageSize,
   })
 
   return members.map((member) => {

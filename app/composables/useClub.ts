@@ -13,7 +13,14 @@ export const useClub = () => {
   const getEvents = () => useEvent().byClubId(club.value?.id)
   const getWaters = () => useWater().byClubId(club.value?.id)
   const getRoles = () => useClubRole().byClubId(club.value?.id)
-  const getMembers = () => useClubMember().byClubId(club.value?.id)
+  const getMembers = () => useClubMember().byClubId(computed(() => {
+    const pagination = usePagination()
+
+    return {
+      clubId: club.value?.id,
+      pagination: pagination.pagination.value,
+    }
+  }))
 
   return {
     club,

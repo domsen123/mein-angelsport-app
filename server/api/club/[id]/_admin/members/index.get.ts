@@ -10,8 +10,10 @@ export default defineAuthenticatedEventHandler(async (event) => {
     id: ulidSchema,
   }).parse(params))
 
+  const pagination = await getValidatedQuery(event, query => paginationSchema.parse(query))
+
   try {
-    return await getClubMembersByClubId({ clubId }, context)
+    return await getClubMembersByClubId({ clubId, pagination }, context)
   }
   catch (error: any) {
     if (error instanceof APIError) {
