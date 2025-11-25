@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { boolean, index, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { user } from './auth.schema'
 
 export const club = pgTable('club', {
@@ -8,6 +8,12 @@ export const club = pgTable('club', {
   name: text('name').notNull(),
   shortName: text('short_name'),
   slug: text('slug').notNull(),
+
+  workDutiesPerYear: integer('work_duties_per_year').default(0),
+  workDutyPriceCents: text('work_duty_price_in_cents'),
+
+  permitSaleStart: text('permit_sale_start'), // DD-MM
+  permitSaleEnd: text('permit_sale_end'), // DD-MM
 
   createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
