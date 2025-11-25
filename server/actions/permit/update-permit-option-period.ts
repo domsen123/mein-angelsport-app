@@ -5,6 +5,7 @@ import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { permit, permitOption, permitOptionPeriod } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
+import { _syncPermitInstanceRange } from '../permitInstance/sync-permit-instance-range'
 
 export const UpdatePermitOptionPeriodCommandSchema = z.object({
   clubId: ulidSchema,
@@ -27,6 +28,19 @@ export const _updatePermitOptionPeriod = async (
 ) => doDatabaseOperation(async (db) => {
   const data = UpdatePermitOptionPeriodCommandSchema.parse(input)
 
+  // Fetch current period to check if number range changed
+  const currentPeriod = await db.query.permitOptionPeriod.findFirst({
+    where: eq(permitOptionPeriod.id, data.periodId),
+    columns: {
+      permitNumberStart: true,
+      permitNumberEnd: true,
+    },
+  })
+
+  if (!currentPeriod) {
+    throw new Error('Permit option period not found')
+  }
+
   const updateData: Record<string, any> = {
     updatedBy: context.userId,
   }
@@ -45,6 +59,24 @@ export const _updatePermitOptionPeriod = async (
 
   if (!updatedPeriod) {
     throw new Error('Permit option period not found')
+  }
+
+  // Check if number range changed
+  const newStart = data.permitNumberStart ?? currentPeriod.permitNumberStart
+  const newEnd = data.permitNumberEnd ?? currentPeriod.permitNumberEnd
+  const rangeChanged = newStart !== currentPeriod.permitNumberStart || newEnd !== currentPeriod.permitNumberEnd
+
+  if (rangeChanged) {
+    // Sync permit instances for the new range
+    await _syncPermitInstanceRange(
+      {
+        periodId: data.periodId,
+        newStart,
+        newEnd,
+      },
+      context,
+      db,
+    )
   }
 
   return updatedPeriod

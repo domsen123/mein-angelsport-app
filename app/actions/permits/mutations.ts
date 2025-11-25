@@ -7,6 +7,7 @@ import type {
   DeletePermitOptionPeriodCommand,
   RemoveWaterFromPermitCommand,
   UpdatePermitCommand,
+  UpdatePermitInstanceCommand,
   UpdatePermitOptionCommand,
   UpdatePermitOptionPeriodCommand,
 } from './api'
@@ -146,6 +147,32 @@ export function useRemoveWaterFromPermitMutation() {
     mutation: (input: RemoveWaterFromPermitCommand) => client.removeWaterFromPermit(input),
     onSuccess(_data, variables) {
       queryCache.invalidateQueries({ key: PERMIT_QUERY_KEYS.getPermitById({ clubId: variables.clubId, permitId: variables.permitId }) })
+    },
+  })
+}
+
+// Instance mutations
+export function useUpdatePermitInstanceMutation() {
+  const queryCache = useQueryCache()
+  const client = usePermitClient()
+
+  return useMutation({
+    mutation: (input: UpdatePermitInstanceCommand) => client.updatePermitInstance(input),
+    onSuccess(_data, variables) {
+      // Invalidate the instances list for this period
+      queryCache.invalidateQueries({
+        key: [...PERMIT_QUERY_KEYS.root, 'instances', 'by-period-id', variables.clubId, variables.permitId, variables.optionId, variables.periodId],
+      })
+      // Invalidate the specific instance
+      queryCache.invalidateQueries({
+        key: PERMIT_QUERY_KEYS.getPermitInstanceById({
+          clubId: variables.clubId,
+          permitId: variables.permitId,
+          optionId: variables.optionId,
+          periodId: variables.periodId,
+          instanceId: variables.instanceId,
+        }),
+      })
     },
   })
 }

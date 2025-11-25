@@ -10,6 +10,7 @@ const props = defineProps<{
   clubId: string
   permitId: string
   option: PermitOption
+  clubSlug: string
 }>()
 
 const toast = useToast()
@@ -201,6 +202,7 @@ function toggleExpand() {
             :permit-id="permitId"
             :option-id="option.id"
             :period="period"
+            :club-slug="clubSlug"
           />
         </div>
       </div>

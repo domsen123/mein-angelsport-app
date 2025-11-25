@@ -6,6 +6,7 @@ const props = defineProps<{
   clubId: string
   permitId: string
   options: PermitOption[]
+  clubSlug: string
 }>()
 
 const toast = useToast()
@@ -63,6 +64,7 @@ async function handleAddOption() {
         :club-id="clubId"
         :permit-id="permitId"
         :option="option"
+        :club-slug="clubSlug"
       />
     </div>
   </UCard>

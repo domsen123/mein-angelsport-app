@@ -1,327 +1,277 @@
-# Permit Admin Page Implementation
+# Permit Instance Generation System
 
-## Overview
-Implement a permit management admin page with:
-- **List Page**: Paginated table of permits with search and sorting
-- **Form Page**: Separate page (not slideover) for create/edit with inline editing for options and periods
-- **Incremental Save**: Create permit first, then add options/periods/waters individually
+## Status Overview
 
----
+**Phases 1-9: ✅ COMPLETE** - All permit admin CRUD functionality is implemented:
+- Server actions, API endpoints, client-side queries/mutations
+- List page, form page, options/periods components
+- Waters assignment, validation, navigation
 
-## Phase 1: Server-Side Query Actions
-
-### 1.1 Get Permits List
-> Create paginated query for permits by club ID
-
-- [ ] Create `server/actions/permit/get-permits-by-club-id.ts`
-  - [ ] Define `GetPermitsByClubIdCommandSchema` with `clubId` and `pagination`
-  - [ ] Use `paginateQuery` helper from `server/database/pagination.ts`
-  - [ ] Include counts for waters and options using subqueries or aggregation
-  - [ ] Add `isExecutorClubAdmin` authorization check
-  - [ ] Export response types for frontend usage
-  - [ ] Searchable columns: `permit.name`
-  - [ ] Sortable columns: `name`, `createdAt`
-
-### 1.2 Get Single Permit
-> Fetch permit with all nested relations for edit form
-
-- [ ] Create `server/actions/permit/get-permit-by-id.ts`
-  - [ ] Define `GetPermitByIdCommandSchema` with `clubId` and `permitId`
-  - [ ] Query permit with relations:
-    - [ ] `waters` (via `permitWater` join table)
-    - [ ] `options` (from `permitOption`)
-    - [ ] `periods` within each option (from `permitOptionPeriod`)
-  - [ ] Add `isExecutorClubAdmin` authorization check
-  - [ ] Export response types
-
-### 1.3 Get Club Waters
-> Fetch waters associated with a club for selection dropdown
-
-- [ ] Create `server/actions/water/get-waters-by-club-id.ts`
-  - [ ] Define schema with `clubId`
-  - [ ] Query `club_water` joined with `water` table
-  - [ ] Return `{ id, name, type }` for each water
-  - [ ] Add authorization check
+**Phase 10: ✅ COMPLETE** - Permit Instance Generation:
+- Server actions: generate, sync, get (paginated), get by id, update
+- Period actions modified: auto-generate on create, sync on update, protect on delete
+- API endpoints: GET list, GET single, PUT update
+- Client code: api methods, queries, mutations with cache invalidation
+- UI: form composable, slideover, instances list page
+- Navigation: ticket icon button in PermitPeriodItem links to instances
 
 ---
 
-## Phase 2: Server-Side API Endpoints (Read)
+## RULES - Business Logic & Rationale
 
-### 2.1 List Permits Endpoint
-- [ ] Create `server/api/club/[id]/_admin/permits/index.get.ts`
-  - [ ] Parse pagination from query params
-  - [ ] Call `getPermitsByClubId` action
-  - [ ] Return paginated result
+### Why Permit Instances Exist
 
-### 2.2 Single Permit Endpoint
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId].get.ts`
-  - [ ] Parse `permitId` from route params
-  - [ ] Call `getPermitById` action
-  - [ ] Return permit with nested data
+A fishing club sells **Erlaubnisscheine** (fishing permits/cards). Each physical permit card has a unique number printed on it. The club needs to:
 
-### 2.3 Club Waters Endpoint
-- [ ] Create `server/api/club/[id]/_admin/waters/index.get.ts`
-  - [ ] Call `getWatersByClubId` action
-  - [ ] Return list of waters
+1. **Pre-allocate permit numbers** - Define a range (e.g., cards #1 through #100) for each selling period
+2. **Track each card individually** - Know which card number is available, reserved, or sold
+3. **Assign cards to members** - Record who owns which specific permit number
+4. **Enable future e-commerce** - Allow members to "reserve" a card when adding to cart before payment
 
----
+### Data Model Hierarchy
 
-## Phase 3: Client-Side API Layer
+```
+permit (e.g., "Jahreserlaubnis 2024")
+  └── permitOption (e.g., "Erwachsene", "Jugendliche")
+        └── permitOptionPeriod (e.g., "Jan-Dec 2024, cards 1-100, €50")
+              └── permitInstance (e.g., "Card #42, sold to Max Mustermann")
+```
 
-### 3.1 API Client
-- [ ] Create `app/actions/permits/api.ts`
-  - [ ] `getPermitsByClubId({ clubId, pagination })`
-  - [ ] `getPermitById({ clubId, permitId })`
-  - [ ] `createPermit({ clubId, name })`
-  - [ ] `updatePermit({ clubId, permitId, name })`
-  - [ ] `deletePermit({ clubId, permitId })`
-  - [ ] `createPermitOption({ clubId, permitId, name?, description? })`
-  - [ ] `updatePermitOption({ clubId, permitId, optionId, name?, description? })`
-  - [ ] `deletePermitOption({ clubId, permitId, optionId })`
-  - [ ] `createPermitOptionPeriod({ clubId, permitId, optionId, ...periodData })`
-  - [ ] `updatePermitOptionPeriod({ clubId, permitId, optionId, periodId, ...periodData })`
-  - [ ] `deletePermitOptionPeriod({ clubId, permitId, optionId, periodId })`
-  - [ ] `assignWaterToPermit({ clubId, permitId, waterId })`
-  - [ ] `removeWaterFromPermit({ clubId, permitId, waterId })`
+### Business Rules
 
-### 3.2 Query Definitions
-- [ ] Create `app/actions/permits/queries.ts`
-  - [ ] Define `PERMIT_QUERY_KEYS` object
-  - [ ] `usePermitsByClubIdQuery` - list with pagination
-  - [ ] `usePermitByIdQuery` - single permit with relations
+1. **Generation Timing**: Instances are created **immediately when a period is created**
+   - This reserves the number range and makes cards available for sale/assignment
+   - Admins can see all available cards right away
 
-### 3.3 Waters Query
-- [ ] Create `app/actions/waters/queries.ts` (if not exists)
-  - [ ] `useWatersByClubIdQuery` - for dropdown selection
+2. **Number Format**: Simple integers matching the physical cards
+   - If `permitNumberStart=1` and `permitNumberEnd=100`, create instances with `permitNumber` = "1", "2", ... "100"
 
----
+3. **Status Workflow**:
+   - `available` → Card exists but not assigned to anyone
+   - `reserved` → Card is in someone's cart or temporarily held (future e-commerce)
+   - `sold` → Card has been purchased/assigned to a member
+   - `cancelled` → Card was sold but later cancelled/returned
 
-## Phase 4: List Page Implementation
+4. **Range Changes** (when admin updates permitNumberStart/End):
+   - **Add**: Create new instances for numbers not yet existing
+   - **Remove**: Only delete instances with status `'available'`
+   - **Protect**: Never delete `reserved`, `sold`, or `cancelled` instances (they have business history)
 
-### 4.1 Permits List Page
-- [ ] Implement `app/pages/verein/[slug]/_admin/permits/index.vue`
-  - [ ] Import `usePagination` composable
-  - [ ] Set up columns with `TableColumn<PermitItem>[]`:
-    - [ ] `name` - sortable
-    - [ ] `watersCount` - number of waters
-    - [ ] `optionsCount` - number of options
-    - [ ] `createdAt` - sortable, formatted date
-    - [ ] `actions` - edit button
-  - [ ] Add search input with `v-model="searchTerm"`
-  - [ ] Add "Neuer Erlaubnisschein" button → navigates to `/permits/new`
-  - [ ] Add `UTable` with sorting and row click handler
-  - [ ] Add `UPagination` component
-  - [ ] Row click navigates to `/permits/{id}`
+5. **Period Deletion Protection**:
+   - Cannot delete a period if any instances are `reserved`, `sold`, or `cancelled`
+   - This protects sales history and member assignments
 
-### 4.2 Add to useClub Composable
-- [ ] Update `app/composables/useClub.ts`
-  - [ ] Add `getPermits(pagination)` method
-  - [ ] Return query for permits list
+### Admin Use Cases
+
+- **View all cards for a period**: See which numbers are available vs. sold
+- **Manually assign card**: Admin sells card in-person, records the sale
+- **Track member assignments**: See which member owns which card number
+- **Handle cancellations**: Mark a sold card as cancelled if member returns it
+- **Add notes**: Record special circumstances (e.g., "Discounted for senior")
 
 ---
 
-## Phase 5: Server-Side Mutation Actions
+## Implementation Plan
 
-### 5.1 Update Permit
-- [ ] Create `server/actions/permit/update-permit.ts`
-  - [ ] Schema: `{ clubId, permitId, name }`
-  - [ ] Update permit record
-  - [ ] Add authorization check
+### Phase 10.1: Server Actions for Permit Instances
 
-### 5.2 Delete Permit
-- [ ] Create `server/actions/permit/delete-permit.ts`
-  - [ ] Schema: `{ clubId, permitId }`
-  - [ ] Delete permit (cascades to options/periods via FK)
-  - [ ] Add authorization check
+#### 10.1.1 Generate Permit Instances Helper
+**File**: `server/actions/permitInstance/generate-permit-instances.ts`
 
-### 5.3 Update Permit Option
-- [ ] Create `server/actions/permit/update-permit-option.ts`
-  - [ ] Schema: `{ permitOptionId, name?, description? }`
-  - [ ] Update option record
-  - [ ] Add authorization check (via permit → club)
+- [x] Create internal helper function `_generatePermitInstances`
+- [x] Parameters: `periodId`, `numberStart`, `numberEnd`, `context`, `tx`
+- [x] Loop from `numberStart` to `numberEnd`, create instance for each
+- [x] Use `ulid()` for each instance ID
+- [x] All instances start as status `'available'`
+- [x] Store permit numbers as strings (e.g., `"1"`, `"42"`)
 
-### 5.4 Delete Permit Option
-- [ ] Create `server/actions/permit/delete-permit-option.ts`
-  - [ ] Schema: `{ permitOptionId }`
-  - [ ] Delete option (cascades to periods)
-  - [ ] Add authorization check
+#### 10.1.2 Sync Instance Range Helper
+**File**: `server/actions/permitInstance/sync-permit-instance-range.ts`
 
-### 5.5 Update Permit Option Period
-- [ ] Create `server/actions/permit/update-permit-option-period.ts`
-  - [ ] Schema: `{ permitOptionPeriodId, validFrom, validTo, priceCents, permitNumberStart, permitNumberEnd }`
-  - [ ] Update period record
-  - [ ] Add authorization check
+- [x] Create internal helper function `_syncPermitInstanceRange`
+- [x] Parameters: `periodId`, `newStart`, `newEnd`, `context`, `tx`
+- [x] Query current instances for period with their `permitNumber` and `status`
+- [x] Calculate numbers to ADD (in new range but not existing)
+- [x] Calculate instances to DELETE (outside new range AND status = `'available'`)
+- [x] Batch delete removable instances using `inArray()` + `and()` conditions
+- [x] Batch insert new instances
 
-### 5.6 Delete Permit Option Period
-- [ ] Create `server/actions/permit/delete-permit-option-period.ts`
-  - [ ] Schema: `{ permitOptionPeriodId }`
-  - [ ] Delete period
-  - [ ] Add authorization check
+#### 10.1.3 Get Permit Instances by Period ID (Paginated)
+**File**: `server/actions/permitInstance/get-permit-instances-by-period-id.ts`
 
-### 5.7 Remove Water from Permit
-- [ ] Create `server/actions/permitWater/remove-permit-from-water.ts`
-  - [ ] Schema: `{ permitId, waterId }`
-  - [ ] Delete from `permitWater` join table
-  - [ ] Add authorization check
+- [x] Create `GetPermitInstancesByPeriodIdCommandSchema` with validation
+- [x] Use `paginateQuery` helper with:
+  - `searchableColumns`: `[permitInstance.permitNumber, permitInstance.ownerName, permitInstance.ownerEmail]`
+  - `sortableColumns`: `{ permitNumber, status, ownerName, soldAt, createdAt }`
+  - `baseFilter`: `eq(permitInstance.permitOptionPeriodId, periodId)`
+  - `with`: `{ ownerMember: true, buyer: true }`
+- [x] Add `isExecutorClubAdmin` authorization check
+- [x] Export response types
 
----
+#### 10.1.4 Get Permit Instance by ID
+**File**: `server/actions/permitInstance/get-permit-instance-by-id.ts`
 
-## Phase 6: Server-Side API Endpoints (Mutations)
+- [x] Create `GetPermitInstanceByIdCommandSchema`
+- [x] Query single instance with relations (`ownerMember`, `buyer`, `optionPeriod`)
+- [x] Add authorization check
+- [x] Export response types
 
-### 6.1 Permit CRUD Endpoints
-- [ ] Create `server/api/club/[id]/_admin/permits/index.post.ts` (create)
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId].put.ts` (update)
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId].delete.ts` (delete)
+#### 10.1.5 Update Permit Instance
+**File**: `server/actions/permitInstance/update-permit-instance.ts`
 
-### 6.2 Option CRUD Endpoints
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/index.post.ts`
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId].put.ts`
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId].delete.ts`
-
-### 6.3 Period CRUD Endpoints
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId]/periods/index.post.ts`
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId]/periods/[periodId].put.ts`
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId]/periods/[periodId].delete.ts`
-
-### 6.4 Water Assignment Endpoints
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/waters/index.post.ts` (assign)
-- [ ] Create `server/api/club/[id]/_admin/permits/[permitId]/waters/[waterId].delete.ts` (remove)
+- [x] Create `UpdatePermitInstanceCommandSchema` with fields:
+  - `status`: optional enum `['available', 'reserved', 'sold', 'cancelled']`
+  - `ownerMemberId`: optional string | null
+  - `ownerName`, `ownerEmail`, `ownerPhone`: optional string | null
+  - `paymentReference`, `paidCents`, `notes`: optional string | null
+- [x] Auto-set timestamps on status change:
+  - `'reserved'` → set `reservedAt = now`
+  - `'sold'` → set `soldAt = now`
+  - `'cancelled'` → set `cancelledAt = now`
+- [x] Add authorization check
 
 ---
 
-## Phase 7: Client-Side Mutations
+### Phase 10.2: Modify Existing Period Actions
 
-### 7.1 Permit Mutations
-- [ ] Create `app/actions/permits/mutations.ts`
-  - [ ] `useCreatePermitMutation` - invalidates list query
-  - [ ] `useUpdatePermitMutation` - invalidates list and single queries
-  - [ ] `useDeletePermitMutation` - invalidates list query
+#### 10.2.1 Modify Create Period
+**File**: `server/actions/permit/create-permit-option-period.ts`
 
-### 7.2 Option Mutations
-- [ ] Add to `app/actions/permits/mutations.ts`
-  - [ ] `useCreatePermitOptionMutation`
-  - [ ] `useUpdatePermitOptionMutation`
-  - [ ] `useDeletePermitOptionMutation`
+- [x] Import `_generatePermitInstances` helper
+- [x] After inserting period, call helper with number range
+- [x] All within same transaction (pass `db` as `tx`)
 
-### 7.3 Period Mutations
-- [ ] Add to `app/actions/permits/mutations.ts`
-  - [ ] `useCreatePermitOptionPeriodMutation`
-  - [ ] `useUpdatePermitOptionPeriodMutation`
-  - [ ] `useDeletePermitOptionPeriodMutation`
+#### 10.2.2 Modify Update Period
+**File**: `server/actions/permit/update-permit-option-period.ts`
 
-### 7.4 Water Mutations
-- [ ] Add to `app/actions/permits/mutations.ts`
-  - [ ] `useAssignWaterToPermitMutation`
-  - [ ] `useRemoveWaterFromPermitMutation`
+- [x] Import `_syncPermitInstanceRange` helper
+- [x] Before update, fetch current period's number range
+- [x] After update, if range changed, call sync helper
+- [x] All within same transaction
 
----
+#### 10.2.3 Modify Delete Period
+**File**: `server/actions/permit/delete-permit-option-period.ts`
 
-## Phase 8: Form Page Implementation
-
-### 8.1 Form Page Structure
-- [ ] Create `app/pages/verein/[slug]/_admin/permits/[permitId].vue`
-  - [ ] Detect mode: `permitId === 'new'` → create, else edit
-  - [ ] Fetch permit data in edit mode using `usePermitByIdQuery`
-  - [ ] Fetch club waters using `useWatersByClubIdQuery`
-  - [ ] Page layout with sections:
-    - [ ] Header with title and back button
-    - [ ] General section (name input)
-    - [ ] Waters section (multi-select)
-    - [ ] Options section (list with add button)
-
-### 8.2 General Section
-- [ ] Name input field (`UInput`)
-- [ ] Save button (create mode) → creates permit, redirects to edit page
-- [ ] Auto-save on blur (edit mode) or explicit save button
-
-### 8.3 Waters Section
-- [ ] Multi-select dropdown (`USelectMenu` with `multiple`)
-- [ ] Show currently assigned waters as badges
-- [ ] On selection change: call assign/remove mutations immediately
-
-### 8.4 Options Section Component
-- [ ] Create `app/components/permit/PermitOptionsSection.vue`
-  - [ ] List of options with expandable rows
-  - [ ] "Option hinzufügen" button at bottom
-  - [ ] Each option shows name, description, period count
-  - [ ] Click to expand and show periods
-
-### 8.5 Option Item Component
-- [ ] Create `app/components/permit/PermitOptionItem.vue`
-  - [ ] Expandable card/row for single option
-  - [ ] Inline editable fields: name, description
-  - [ ] Delete button with confirmation
-  - [ ] Contains periods list when expanded
-  - [ ] "Zeitraum hinzufügen" button
-
-### 8.6 Period Item Component
-- [ ] Create `app/components/permit/PermitPeriodItem.vue`
-  - [ ] Row within option showing period details
-  - [ ] Inline editable fields:
-    - [ ] `validFrom` - date picker
-    - [ ] `validTo` - date picker
-    - [ ] `priceCents` - currency input (display as €, store as cents string)
-    - [ ] `permitNumberStart` - number input
-    - [ ] `permitNumberEnd` - number input
-  - [ ] Delete button with confirmation
-  - [ ] Save button or auto-save on field blur
+- [x] Before deleting, check for non-available instances
+- [x] If any `reserved`, `sold`, or `cancelled` instances exist → throw error
+- [x] Delete all `available` instances first
+- [x] Then delete period
 
 ---
 
-## Phase 9: Polish & Testing
+### Phase 10.3: API Endpoints
 
-### 9.1 Form Validation
-- [ ] Add Zod validation schemas for all forms
-- [ ] Display validation errors inline
-- [ ] Validate date ranges (validFrom < validTo)
-- [ ] Validate permit number ranges (start < end)
+**Base path**: `server/api/club/[id]/_admin/permits/[permitId]/options/[optionId]/periods/[periodId]/instances/`
 
-### 9.2 Loading & Error States
-- [ ] Show loading spinners during mutations
-- [ ] Toast notifications for success/error
-- [ ] Disable buttons during loading
-- [ ] Handle network errors gracefully
-
-### 9.3 Delete Confirmations
-- [ ] Confirmation dialog before deleting permit
-- [ ] Confirmation before deleting option (warns about periods)
-- [ ] Confirmation before deleting period
-
-### 9.4 Navigation
-- [ ] Back button on form page returns to list
-- [ ] After creating permit, redirect to edit page with new ID
-- [ ] After deleting permit, redirect to list
+- [x] `index.get.ts` - Paginated instances list
+- [x] `[instanceId].get.ts` - Single instance details
+- [x] `[instanceId].put.ts` - Update instance
 
 ---
 
-## Reference Files
+### Phase 10.4: Client-Side Code
+
+#### 10.4.1 API Client
+**File**: `app/actions/permits/api.ts`
+
+- [x] Add interfaces: `GetPermitInstancesCommand`, `UpdatePermitInstanceCommand`
+- [x] Add methods to `usePermitClient()`:
+  - `getPermitInstancesByPeriodId()`
+  - `getPermitInstanceById()`
+  - `updatePermitInstance()`
+
+#### 10.4.2 Queries
+**File**: `app/actions/permits/queries.ts`
+
+- [x] Add query keys for instances
+- [x] Add `usePermitInstancesByPeriodIdQuery`
+- [x] Add `usePermitInstanceByIdQuery`
+
+#### 10.4.3 Mutations
+**File**: `app/actions/permits/mutations.ts`
+
+- [x] Add `useUpdatePermitInstanceMutation()` with cache invalidation
+
+---
+
+### Phase 10.5: Admin UI Components
+
+#### 10.5.1 Form Composable
+**File**: `app/composables/usePermitInstanceForm.ts`
+
+- [x] Follow `useMemberForm` pattern
+- [x] Query param `instanceId` for edit state
+- [x] Provide `openEdit(id)`, `close()`, `submit()` methods
+- [x] Manage form state with reactive object
+
+#### 10.5.2 Form Slideover
+**File**: `app/components/PermitInstanceFormSlideover.vue`
+
+- [x] Follow `MemberFormSlideover` pattern
+- [x] Fields:
+  - Status dropdown (available/reserved/sold/cancelled)
+  - Member assignment (dropdown of club members)
+  - Owner info: name, email, phone
+  - Payment: reference, paidCents
+  - Notes textarea
+- [x] Use `class="w-full"` on all inputs
+
+#### 10.5.3 Instances Admin Page
+**File**: `app/pages/verein/[slug]/_admin/permits/[permitId]/periods/[periodId]/instances.vue`
+
+- [x] Follow `members/index.vue` pattern
+- [x] Use `usePagination()` for pagination/search/sorting
+- [x] `UTable` with columns:
+  - `permitNumber` - sortable
+  - `status` - badge with colors (success=available, warning=reserved, info=sold, error=cancelled)
+  - `ownerName` - sortable
+  - `ownerMember` - linked member name
+  - `soldAt` - sortable, formatted date
+- [x] Click row to edit via slideover
+- [x] Include `PermitInstanceFormSlideover` component
+
+---
+
+### Phase 10.6: Navigation Integration
+
+#### 10.6.1 Link from Period to Instances
+**File**: `app/components/permit/PermitPeriodItem.vue`
+
+- [x] Add button/link with ticket icon (Manage cards)
+- [x] Navigate to instances page for that period
+- [x] Pass optionId via query parameter
+
+---
+
+## Implementation Order
+
+1. **Phase 10.1** - Server actions (helpers first, then CRUD)
+2. **Phase 10.2** - Modify existing period actions
+3. **Phase 10.3** - API endpoints
+4. **Phase 10.4** - Client-side code
+5. **Phase 10.5** - UI components
+6. **Phase 10.6** - Navigation integration
+
+---
+
+## Critical Files Reference
 
 | Purpose | Path |
 |---------|------|
-| Pagination helper | `server/database/pagination.ts` |
-| Server action pattern | `server/actions/clubMember/get-club-members-by-club-id.ts` |
-| Existing create actions | `server/actions/permit/create-permit.ts` |
-| API client pattern | `app/actions/clubMembers/api.ts` |
-| Query pattern | `app/actions/clubMembers/queries.ts` |
-| Mutation pattern | `app/actions/clubMembers/mutations.ts` |
-| Form composable | `app/composables/useMemberForm.ts` |
-| List page pattern | `app/pages/verein/[slug]/_admin/members/index.vue` |
-| Permit schema | `server/database/schema/permit.schema.ts` |
-| Water schema | `server/database/schema/water.schema.ts` |
+| Permit Instance Schema | `server/database/schema/permit.schema.ts` (lines 64-108) |
+| Create Period Action | `server/actions/permit/create-permit-option-period.ts` |
+| Update Period Action | `server/actions/permit/update-permit-option-period.ts` |
+| Delete Period Action | `server/actions/permit/delete-permit-option-period.ts` |
+| Member Form Pattern | `app/composables/useMemberForm.ts` |
+| Members List Pattern | `app/pages/verein/[slug]/_admin/members/index.vue` |
+| Slideover Pattern | `app/components/MemberFormSlideover.vue` |
+| Period Item Component | `app/components/permit/PermitPeriodItem.vue` |
 
 ---
 
-## Data Model Reminder
+## Edge Cases to Handle
 
-```
-permit (name, clubId)
-  └── permitOption (name, description)
-        └── permitOptionPeriod (validFrom, validTo, priceCents, permitNumberStart, permitNumberEnd)
-
-permitWater (permitId, waterId) - join table
-```
-
-**Incremental Save Flow:**
-1. Create permit (name only) → get ID → redirect to edit
-2. On edit page: add options, periods, waters - each saves immediately
-3. No draft state - all changes persist immediately
+- **Large ranges** (1-10000): Consider batch processing in chunks
+- **Invalid ranges**: Validate `permitNumberStart <= permitNumberEnd` in schema
+- **Concurrent updates**: Transaction wrapper handles this
+- **Delete protection**: `onDelete: 'restrict'` on schema prevents orphaned data

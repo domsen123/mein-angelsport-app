@@ -34,6 +34,12 @@
     "nuxt-docs": {
       "type": "sse",
       "url": "https://mcp.nuxt.com/sse"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     }
   }
 }

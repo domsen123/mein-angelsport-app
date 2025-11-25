@@ -12,6 +12,7 @@ const props = defineProps<{
   permitId: string
   optionId: string
   period: PermitOptionPeriod
+  clubSlug: string
 }>()
 
 const toast = useToast()
@@ -263,7 +264,16 @@ async function handleDelete() {
       </UFormField>
 
       <!-- Actions -->
-      <div class="col-span-1 flex justify-end">
+      <div class="col-span-1 flex justify-end gap-1">
+        <UButton
+          icon="i-lucide-ticket"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          aria-label="Karten verwalten"
+          :to="`/verein/${props.clubSlug}/_admin/permits/${props.permitId}/periods/${props.period.id}/instances?optionId=${props.optionId}`"
+          :disabled="isUpdating"
+        />
         <UButton
           icon="i-lucide-trash-2"
           size="xs"

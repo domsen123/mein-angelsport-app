@@ -6,6 +6,7 @@ import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { permit, permitOption, permitOptionPeriod } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
+import { _generatePermitInstances } from '../permitInstance/generate-permit-instances'
 
 export const CreatePermitOptionPeriodCommandSchema = z.object({
   clubId: ulidSchema,
@@ -53,6 +54,17 @@ export const _createPermitOptionPeriod = async (
       updatedBy: context.userId,
     })
     .returning()
+
+  // Generate permit instances for the number range
+  await _generatePermitInstances(
+    {
+      periodId: id,
+      numberStart: data.permitNumberStart,
+      numberEnd: data.permitNumberEnd,
+    },
+    context,
+    db,
+  )
 
   return createdPermitOptionPeriod
 }, tx)

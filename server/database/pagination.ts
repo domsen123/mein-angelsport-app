@@ -1,9 +1,9 @@
-import type { BuildQueryResult, DBQueryConfig, ExtractTablesWithRelations, SQL } from 'drizzle-orm'
+import type { BuildQueryResult, DBQueryConfig, ExtractTablesWithRelations } from 'drizzle-orm'
 import type { PgColumn, PgTable, TableConfig } from 'drizzle-orm/pg-core'
 import type { PaginationParams } from '~~/server/utils/validation'
 import type { DatabaseClient } from './client'
 import type * as schema from './schema'
-import { asc, desc } from 'drizzle-orm'
+import { asc, desc, SQL } from 'drizzle-orm'
 import { buildSearchFilter } from './helper'
 
 // Extract the schema type for relations
@@ -36,10 +36,10 @@ export interface PaginationConfig<
 > {
   /** Columns to search against using ILIKE */
   searchableColumns?: PgColumn[]
-  /** Map of field names to columns that can be sorted. Keys are the API field names, values are the actual columns */
-  sortableColumns?: Record<string, PgColumn>
+  /** Map of field names to columns or SQL expressions that can be sorted. Keys are the API field names, values are the actual columns or SQL expressions (e.g., for casting) */
+  sortableColumns?: Record<string, PgColumn | SQL>
   /** Default sort when no orderBy is specified. Format: { column, direction } */
-  defaultSort?: { column: PgColumn, direction: 'asc' | 'desc' }
+  defaultSort?: { column: PgColumn | SQL, direction: 'asc' | 'desc' }
   /** Additional WHERE filter to apply */
   baseFilter?: SQL
   /** Relations to include in the query */
@@ -68,7 +68,7 @@ export interface PaginatedResult<TItem> {
  */
 function parseSortOrder(
   orderByStrings: string[] | undefined,
-  sortableColumns: Record<string, PgColumn>,
+  sortableColumns: Record<string, PgColumn | SQL>,
 ): SQL[] {
   if (!orderByStrings?.length)
     return []

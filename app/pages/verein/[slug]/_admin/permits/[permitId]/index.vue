@@ -195,6 +195,7 @@ function goBack() {
         :club-id="club.id"
         :permit-id="permitId"
         :options="permitData?.options ?? []"
+        :club-slug="clubSlug"
       />
     </template>
   </div>

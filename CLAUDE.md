@@ -61,3 +61,6 @@ const { data, isLoading } = useQuery(queryOptions, () => ({ param: value.value }
 - `app/composables/usePagination.ts` - Client-side pagination + sorting state
 - `app/composables/useSortableHeader.ts` - Sortable column header helper
 - use class="w-full" on all NuxtUi input fields like (UInput, USelect, UTextarea...)
+
+## Playwright MCP
+- always first login at `http://localhost:3000/auth/login` with USER_MAIL and USER_PASSWORD from .env

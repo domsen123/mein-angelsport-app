@@ -71,6 +71,44 @@ export interface RemoveWaterFromPermitCommand {
   waterId: string
 }
 
+// Permit Instance interfaces
+export interface GetPermitInstancesByPeriodIdCommand {
+  clubId: string
+  permitId: string
+  optionId: string
+  periodId: string
+  pagination: {
+    page: number
+    pageSize: number
+    searchTerm?: string
+    orderBy?: string[]
+  }
+}
+
+export interface GetPermitInstanceByIdCommand {
+  clubId: string
+  permitId: string
+  optionId: string
+  periodId: string
+  instanceId: string
+}
+
+export interface UpdatePermitInstanceCommand {
+  clubId: string
+  permitId: string
+  optionId: string
+  periodId: string
+  instanceId: string
+  status?: 'available' | 'reserved' | 'sold' | 'cancelled'
+  ownerMemberId?: string | null
+  ownerName?: string | null
+  ownerEmail?: string | null
+  ownerPhone?: string | null
+  paymentReference?: string | null
+  paidCents?: string | null
+  notes?: string | null
+}
+
 export const usePermitClient = () => {
   const { $api } = useNuxtApp()
 
@@ -151,6 +189,24 @@ export const usePermitClient = () => {
       method: 'DELETE',
     })
 
+  // Instance CRUD
+  const getPermitInstancesByPeriodId = ({ clubId, permitId, optionId, periodId, pagination }: GetPermitInstancesByPeriodIdCommand) =>
+    $api(`/api/club/${clubId}/_admin/permits/${permitId}/options/${optionId}/periods/${periodId}/instances`, {
+      method: 'GET',
+      query: { ...pagination },
+    })
+
+  const getPermitInstanceById = ({ clubId, permitId, optionId, periodId, instanceId }: GetPermitInstanceByIdCommand) =>
+    $api(`/api/club/${clubId}/_admin/permits/${permitId}/options/${optionId}/periods/${periodId}/instances/${instanceId}`, {
+      method: 'GET',
+    })
+
+  const updatePermitInstance = ({ clubId, permitId, optionId, periodId, instanceId, ...body }: UpdatePermitInstanceCommand) =>
+    $api(`/api/club/${clubId}/_admin/permits/${permitId}/options/${optionId}/periods/${periodId}/instances/${instanceId}`, {
+      method: 'PUT',
+      body,
+    })
+
   return {
     getPermitsByClubId,
     getPermitById,
@@ -165,5 +221,8 @@ export const usePermitClient = () => {
     deletePermitOptionPeriod,
     assignWaterToPermit,
     removeWaterFromPermit,
+    getPermitInstancesByPeriodId,
+    getPermitInstanceById,
+    updatePermitInstance,
   }
 }

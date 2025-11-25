@@ -1,9 +1,9 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
-import { permit, permitOption, permitOptionPeriod } from '~~/server/database/schema'
+import { permit, permitInstance, permitOption, permitOptionPeriod } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
 export const DeletePermitOptionPeriodCommandSchema = z.object({
@@ -22,6 +22,29 @@ export const _deletePermitOptionPeriod = async (
 ) => doDatabaseOperation(async (db) => {
   const data = DeletePermitOptionPeriodCommandSchema.parse(input)
 
+  // Check for non-available instances (reserved, sold, cancelled)
+  // These instances have business history and must be protected
+  const nonAvailableCount = await db.$count(
+    permitInstance,
+    and(
+      eq(permitInstance.permitOptionPeriodId, data.periodId),
+      ne(permitInstance.status, 'available'),
+    ),
+  )
+
+  if (nonAvailableCount > 0) {
+    throw new Error(`Cannot delete period: ${nonAvailableCount} permit(s) have been reserved, sold, or cancelled. Remove or cancel these first.`)
+  }
+
+  // Delete all available instances first (they have no business history)
+  await db.delete(permitInstance).where(
+    and(
+      eq(permitInstance.permitOptionPeriodId, data.periodId),
+      eq(permitInstance.status, 'available'),
+    ),
+  )
+
+  // Now delete the period
   const [deletedPeriod] = await db
     .delete(permitOptionPeriod)
     .where(eq(permitOptionPeriod.id, data.periodId))
