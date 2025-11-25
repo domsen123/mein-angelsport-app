@@ -9,10 +9,10 @@ import { createClubEvent } from '~~/server/actions/clubEvent/create-club-event'
 import { createClubMember } from '~~/server/actions/clubMember/create-club-member'
 import { _getClubMemberByNameAndBirthdate } from '~~/server/actions/clubMember/temp/_get-by-name-and-birthdate'
 import { createClubRole } from '~~/server/actions/clubRole/create-club-role'
-import { assignWaterToClub } from '~~/server/actions/clubWater/assign-water-to-club'
 import { createPermit } from '~~/server/actions/permit/create-permit'
 import { createPermitOption } from '~~/server/actions/permit/create-permit-option'
 import { createPermitOptionPeriod } from '~~/server/actions/permit/create-permit-option-period'
+import { assignWaterToClub } from '~~/server/actions/clubWater/assign-water-to-club'
 import { assignPermitToWater } from '~~/server/actions/permitWater/assign-permit-to-water'
 import { createWater } from '~~/server/actions/water/create-water'
 import { getDatabase } from '~~/server/database/client'
@@ -40,7 +40,7 @@ export default defineEventHandler(async () => {
         tx,
       )
 
-      // create waters
+      // create waters and assign to club
       const createdWaters: InferSelectModel<typeof water>[] = []
       const waters: CreateWaterCommand[] = [
         { type: 'lentic', name: 'Haugsee', postCode: '89233' },
@@ -56,11 +56,8 @@ export default defineEventHandler(async () => {
         if (!createdWater) {
           throw new Error(`Failed to create water: ${waterData.name}`)
         }
+        await assignWaterToClub({ clubId: club.id, waterId: createdWater.id }, context, tx)
         createdWaters.push(createdWater)
-        await assignWaterToClub({
-          clubId: club.id,
-          waterId: createdWater.id,
-        }, context, tx)
       }
 
       // create club roles

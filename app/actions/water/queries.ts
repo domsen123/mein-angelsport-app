@@ -1,4 +1,4 @@
-import type { GetWatersByClubIdCommand } from '~~/server/actions/water/get-waters-by-club-id'
+import type { GetWatersByClubIdSimpleCommand } from '~~/server/actions/water/get-waters-by-club-id'
 import { useWaterClient } from './api'
 
 export const WATER_QUERY_KEYS = {
@@ -6,7 +6,7 @@ export const WATER_QUERY_KEYS = {
   getWatersByClubId: (clubId: string) => [...WATER_QUERY_KEYS.root, 'by-club-id', clubId] as const,
 }
 
-export const useWatersByClubIdQuery = ({ clubId }: GetWatersByClubIdCommand) => defineQueryOptions({
+export const useWatersByClubIdQuery = ({ clubId }: GetWatersByClubIdSimpleCommand) => defineQueryOptions({
   key: WATER_QUERY_KEYS.getWatersByClubId(clubId),
   query: () => useWaterClient().getWatersByClubId({ clubId }),
   enabled: !!clubId,

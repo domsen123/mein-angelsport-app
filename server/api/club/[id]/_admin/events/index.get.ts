@@ -1,6 +1,6 @@
 import { APIError } from 'better-auth'
 import { z } from 'zod'
-import { getWatersByClubIdSimple } from '~~/server/actions/water/get-waters-by-club-id'
+import { getClubEventsByClubId } from '~~/server/actions/clubEvent/get-club-events-by-club-id'
 import { createExecutionContext } from '~~/server/types/ExecutionContext'
 
 export default defineAuthenticatedEventHandler(async (event) => {
@@ -10,15 +10,17 @@ export default defineAuthenticatedEventHandler(async (event) => {
     id: ulidSchema,
   }).parse(params))
 
+  const pagination = await getValidatedQuery(event, query => paginationSchema.parse(query))
+
   try {
-    return await getWatersByClubIdSimple({ clubId }, context)
+    return await getClubEventsByClubId({ clubId, pagination }, context)
   }
   catch (error: any) {
     if (error instanceof APIError) {
       throw error
     }
     throw new APIError('INTERNAL_SERVER_ERROR', {
-      message: 'Beim Abrufen der Vereinsgewässer ist ein interner Fehler aufgetreten.',
+      message: 'Beim Abrufen der Veranstaltungen ist ein interner Fehler aufgetreten.',
       cause: error,
     })
   }

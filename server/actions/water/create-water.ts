@@ -7,8 +7,8 @@ import { water } from '~~/server/database/schema'
 
 export const CreateWaterSchema = z.object({
   type: z.enum(['lotic', 'lentic']),
-  name: z.string().min(1).max(100),
-  postCode: z.string().min(1).max(10),
+  name: z.string().min(1, 'Gewässername ist erforderlich').max(100),
+  postCode: z.string().min(1, 'Postleitzahl ist erforderlich').max(10),
 })
 
 export type CreateWaterCommand = z.infer<typeof CreateWaterSchema>
@@ -29,7 +29,7 @@ export const _createWater = async (
   const generatedSlug = generateSlug(preparedSlug)
   const slug = await ensureUniqueSlug(generatedSlug, water, db)
 
-  // execution
+  // Create the water record
   const [createdWater] = await db
     .insert(water)
     .values({
@@ -52,6 +52,4 @@ export const createWater = async (
   input: CreateWaterCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
-) => doDatabaseOperation(async (db) => {
-  return _createWater(input, context, db)
-}, tx)
+) => _createWater(input, context, tx)

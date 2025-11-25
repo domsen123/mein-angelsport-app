@@ -16,11 +16,16 @@ const { clubSlug } = useClub()
           [
             { type: 'label', label: 'Verein', class: [collapsed && 'hidden'] },
             { icon: 'i-lucide-settings', label: 'Einstellungen', to: `/verein/${clubSlug}/_admin`, exact: true },
+            { icon: 'i-lucide-waves', label: 'Gewässer', to: `/verein/${clubSlug}/_admin/waters` },
           ],
           [
             { type: 'label', label: 'Mitglieder', class: [collapsed && 'hidden'] },
             { icon: 'i-lucide-user', label: 'Mitglieder', to: `/verein/${clubSlug}/_admin/members` },
             { icon: 'i-lucide-users', label: 'Gruppen', to: `/verein/${clubSlug}/_admin/groups` },
+          ],
+          [
+            { type: 'label', label: 'Veranstaltungen', class: [collapsed && 'hidden'] },
+            { icon: 'i-lucide-calendar', label: 'Events', to: `/verein/${clubSlug}/_admin/events` },
           ],
           [
             { type: 'label', label: 'Rechtliches', class: [collapsed && 'hidden'] },

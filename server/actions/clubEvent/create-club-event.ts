@@ -4,6 +4,7 @@ import { ulid } from 'ulid'
 import { z } from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { clubEvent } from '~~/server/database/schema'
+import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
 export const CreateClubEventSchema = z.object({
   clubId: ulidSchema,
@@ -64,5 +65,6 @@ export const createClubEvent = async (
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
+  await isExecutorClubAdmin(input.clubId, context, db)
   return _createClubEvent(input, context, db)
 }, tx)

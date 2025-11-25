@@ -1,4 +1,5 @@
 import { useClubBySlugQuery } from '~/actions/club/queries'
+import { useClubEventsByClubIdQuery } from '~/actions/clubEvents/queries'
 import { useClubMembersByClubIdQuery } from '~/actions/clubMembers/queries'
 import { useClubRolesByClubIdQuery } from '~/actions/clubRoles/queries'
 import { usePermitsByClubIdQuery } from '~/actions/permits/queries'
@@ -32,9 +33,18 @@ export const useClub = () => {
     pagination: pagination.value,
   }))
 
-  const getClubWaters = () => useQuery(useWatersByClubIdQuery, () => ({
+  const getWatersPaginated = (pagination: ClientPaginationParams['pagination']) => useQuery(useWatersByClubIdQuery, () => ({
     clubId: club.value!.id,
+    pagination: pagination.value,
   }))
+
+  const getEventsPaginated = (pagination: ClientPaginationParams['pagination']) => useQuery(useClubEventsByClubIdQuery, () => ({
+    clubId: club.value!.id,
+    pagination: pagination.value,
+  }))
+
+  // Alias for non-paginated waters (used by permit page)
+  const getClubWaters = () => getWaters()
 
   return {
     club,
@@ -45,9 +55,11 @@ export const useClub = () => {
     isClubAdmin,
     getEvents,
     getWaters,
+    getClubWaters,
     getRoles,
     getMembers,
     getPermits,
-    getClubWaters,
+    getWatersPaginated,
+    getEventsPaginated,
   }
 }

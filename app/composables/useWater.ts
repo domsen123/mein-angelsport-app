@@ -1,7 +1,8 @@
 import { useWatersByClubIdQuery } from '~/actions/water/queries'
 
 export const useWater = () => {
-  const byClubId = (clubId?: MaybeRefOrGetter<string>) => useQuery(useWatersByClubIdQuery, ({
+  // Non-paginated query using the public endpoint
+  const byClubId = (clubId?: MaybeRefOrGetter<string>) => useQuery(useWatersByClubIdQuery, () => ({
     clubId: toValue(clubId!),
   }))
 
