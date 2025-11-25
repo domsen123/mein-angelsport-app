@@ -21,19 +21,22 @@ const searchTermDebounced = refDebounced(searchTerm, 300)
 const { getMembers } = useClub()
 const membersQuery = getMembers(computed(() => ({
   page: 1,
-  pageSize: 100,
+  pageSize: 99,
   searchTerm: searchTermDebounced.value || undefined,
 })))
 
 const noneLabelText = computed(() => props.noneLabel || 'Kein Mitglied')
 
 const memberOptions = computed(() =>
-  (membersQuery.data.value?.items || []).map(m => ({
-    label: [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Unbekannt',
-    email: m.email,
-    value: m.id,
-    member: m,
-  })),
+  [
+    { label: noneLabelText.value, value: NONE_VALUE, member: null, email: '' },
+    ...(membersQuery.data.value?.items || []).map(m => ({
+      label: [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Unbekannt',
+      email: m.email,
+      value: m.id,
+      member: m,
+    })),
+  ],
 )
 
 const internalValue = computed({
@@ -68,22 +71,6 @@ const selectedOption = computed(() =>
       <span :class="selectedOption ? 'truncate' : 'text-muted truncate'">
         {{ selectedOption?.label || placeholder || 'Mitglied auswählen...' }}
       </span>
-    </template>
-
-    <template v-if="allowNone !== false" #content-top>
-      <div class="p-1">
-        <button
-          type="button"
-          class="group relative w-full flex items-center select-none outline-none p-1.5 text-sm gap-1.5 rounded-md before:absolute before:z-[-1] before:inset-px before:rounded-md transition-colors before:transition-colors"
-          :class="internalValue === NONE_VALUE
-            ? 'text-highlighted before:bg-elevated/50'
-            : 'text-default data-highlighted:text-highlighted data-highlighted:before:bg-elevated/50'"
-          @click="internalValue = NONE_VALUE"
-        >
-          <span class="truncate">{{ noneLabelText }}</span>
-        </button>
-      </div>
-      <div class="-mx-1 my-1 h-px bg-border" />
     </template>
 
     <template #item-label="{ item }">

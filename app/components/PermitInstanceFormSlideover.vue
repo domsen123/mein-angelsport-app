@@ -10,7 +10,6 @@ const props = defineProps<{
 }>()
 
 const {
-  instanceId,
   isOpen,
   state,
   instanceData,
@@ -38,7 +37,7 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
-async function onSubmit(_event: FormSubmitEvent<Schema>) {
+const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
   await submit()
 }
 
@@ -57,51 +56,44 @@ const slideoverOpen = computed({
   },
 })
 
+const currencyFormatter = new Intl.NumberFormat('de-DE', {
+  style: 'decimal',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 // Helper to convert cents to Euro display
-function formatCentsToEuro(cents: string | null): string {
+const formatCentsToEuro = (cents: string | null): string => {
   if (!cents) return ''
   const num = Number.parseInt(cents, 10)
-  if (Number.isNaN(num)) return ''
-  return (num / 100).toFixed(2).replace('.', ',')
+  return Number.isNaN(num) ? '' : currencyFormatter.format(num / 100)
 }
 
 // Helper to convert Euro input to cents
-function euroToCents(euro: string): string {
+const euroToCents = (euro: string): string => {
   if (!euro) return ''
-  const cleaned = euro.replace(/[€\s]/g, '').replace(',', '.')
-  const num = Number.parseFloat(cleaned)
-  if (Number.isNaN(num)) return ''
-  return Math.round(num * 100).toString()
+  const num = Number.parseFloat(euro.replace(/[€\s.]/g, '').replace(',', '.'))
+  return Number.isNaN(num) ? '' : Math.round(num * 100).toString()
 }
 
-// Local price state for display
+// Local price state for display with two-way sync
 const priceEuro = ref('')
 
-// Sync from state to local price
 watch(() => state.paidCents, (cents) => {
   priceEuro.value = formatCentsToEuro(cents)
 }, { immediate: true })
 
-// Sync from local price to state
 watch(priceEuro, (euro) => {
   state.paidCents = euroToCents(euro) || null
 })
 
 // Handle member selection - populate owner fields from selected member
-function onMemberSelect(member: { id: string, firstName: string | null, lastName: string | null, email: string | null, phone: string | null } | null) {
-  if (member) {
-    state.ownerName = [member.firstName, member.lastName].filter(Boolean).join(' ') || null
-    if (member.email) {
-      state.ownerEmail = member.email
-    }
-    if (member.phone) {
-      state.ownerPhone = member.phone
-    }
-  }
+const onMemberSelect = (member: { id: string, firstName: string | null, lastName: string | null, email: string | null, phone: string | null } | null) => {
+  if (!member) return
+  state.ownerName = [member.firstName, member.lastName].filter(Boolean).join(' ') || null
+  if (member.email) state.ownerEmail = member.email
+  if (member.phone) state.ownerPhone = member.phone
 }
-
-// Form state for validation
-const formState = computed(() => state)
 </script>
 
 <template>
@@ -119,7 +111,7 @@ const formState = computed(() => state)
       <UForm
         v-else
         :schema="schema"
-        :state="formState"
+        :state="state"
         class="space-y-4"
         @submit="onSubmit"
       >

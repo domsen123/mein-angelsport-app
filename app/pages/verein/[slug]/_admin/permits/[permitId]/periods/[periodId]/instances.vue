@@ -132,21 +132,8 @@ function onRowClick(_e: Event, row: { original: InstanceItem }) {
   openEdit(row.original.id)
 }
 
-// Compute stats
-const stats = computed(() => {
-  if (!data.value?.items) return null
-
-  // Note: These are just for the current page, not total
-  // For accurate stats, we'd need a separate endpoint
-  const items = data.value.items
-  return {
-    available: items.filter(i => i.status === 'available').length,
-    reserved: items.filter(i => i.status === 'reserved').length,
-    sold: items.filter(i => i.status === 'sold').length,
-    cancelled: items.filter(i => i.status === 'cancelled').length,
-    total: data.value.meta.totalItems,
-  }
-})
+// Stats from API (counts all instances in period, not just current page)
+const stats = computed(() => data.value?.stats ?? null)
 </script>
 
 <template>

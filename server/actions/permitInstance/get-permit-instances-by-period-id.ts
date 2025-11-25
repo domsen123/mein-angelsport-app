@@ -1,6 +1,6 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { paginateQuery } from '~~/server/database/pagination'
@@ -25,35 +25,70 @@ const _getPermitInstancesByPeriodId = async (
 ) => doDatabaseOperation(async (db) => {
   const data = GetPermitInstancesByPeriodIdCommandSchema.parse(input)
 
-  return paginateQuery(
-    db,
-    permitInstance,
-    'permitInstance',
-    data.pagination,
-    {
-      searchableColumns: [
-        permitInstance.permitNumber,
-        permitInstance.ownerName,
-        permitInstance.ownerEmail,
-      ],
-      sortableColumns: {
-        permitNumber: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
-        status: permitInstance.status,
-        ownerName: permitInstance.ownerName,
-        soldAt: permitInstance.soldAt,
-        createdAt: permitInstance.createdAt,
+  // Run paginated query and status counts in parallel
+  const [paginatedResult, statusCounts] = await Promise.all([
+    paginateQuery(
+      db,
+      permitInstance,
+      'permitInstance',
+      data.pagination,
+      {
+        searchableColumns: [
+          permitInstance.permitNumber,
+          permitInstance.ownerName,
+          permitInstance.ownerEmail,
+        ],
+        sortableColumns: {
+          permitNumber: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
+          status: permitInstance.status,
+          ownerName: permitInstance.ownerName,
+          soldAt: permitInstance.soldAt,
+          createdAt: permitInstance.createdAt,
+        },
+        defaultSort: {
+          column: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
+          direction: 'asc',
+        },
+        baseFilter: eq(permitInstance.permitOptionPeriodId, data.periodId),
+        with: {
+          ownerMember: true,
+          buyer: true,
+        },
       },
-      defaultSort: {
-        column: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
-        direction: 'asc',
-      },
-      baseFilter: eq(permitInstance.permitOptionPeriodId, data.periodId),
-      with: {
-        ownerMember: true,
-        buyer: true,
-      },
+    ),
+    // Get status counts for all instances in this period (not paginated)
+    Promise.all([
+      db.$count(permitInstance, and(
+        eq(permitInstance.permitOptionPeriodId, data.periodId),
+        eq(permitInstance.status, 'available'),
+      )),
+      db.$count(permitInstance, and(
+        eq(permitInstance.permitOptionPeriodId, data.periodId),
+        eq(permitInstance.status, 'reserved'),
+      )),
+      db.$count(permitInstance, and(
+        eq(permitInstance.permitOptionPeriodId, data.periodId),
+        eq(permitInstance.status, 'sold'),
+      )),
+      db.$count(permitInstance, and(
+        eq(permitInstance.permitOptionPeriodId, data.periodId),
+        eq(permitInstance.status, 'cancelled'),
+      )),
+    ]),
+  ])
+
+  const [available, reserved, sold, cancelled] = statusCounts
+
+  return {
+    ...paginatedResult,
+    stats: {
+      available,
+      reserved,
+      sold,
+      cancelled,
+      total: paginatedResult.meta.totalItems,
     },
-  )
+  }
 }, tx)
 
 export const getPermitInstancesByPeriodId = async (
