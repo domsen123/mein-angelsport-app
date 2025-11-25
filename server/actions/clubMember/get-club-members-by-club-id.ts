@@ -31,6 +31,7 @@ export const _getClubMembersByClubId = async (
       createdAt: clubMember.createdAt,
     },
     baseFilter: eq(clubMember.clubId, clubId),
+    defaultSort: { column: clubMember.createdAt, direction: 'asc' },
     with: {
       user: {
         columns: {

@@ -1,12 +1,15 @@
 <script lang="ts" setup>
 import type { TableColumn } from '@nuxt/ui'
 
-const { getRoles } = useClub()
+const { club, getRoles } = useClub()
 const { pagination, searchTerm, page, sorting } = usePagination()
 
 const { data } = getRoles(pagination)
 
 type RoleItem = NonNullable<typeof data.value>['items'][number]
+
+// Form composable for opening slideover
+const { openCreate, openEdit } = useRoleForm(computed(() => club.value?.id))
 
 const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
@@ -50,21 +53,46 @@ const columns: TableColumn<RoleItem>[] = [
       return row.original.memberCount ?? 0
     },
   },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row }) => {
+      return h(UButton, {
+        icon: 'i-lucide-pencil',
+        size: 'xs',
+        color: 'neutral',
+        variant: 'ghost',
+        onClick: (e: Event) => {
+          e.stopPropagation()
+          openEdit(row.original.id)
+        },
+      })
+    },
+  },
 ]
+
+function onRowClick(_e: Event, row: { original: RoleItem }) {
+  openEdit(row.original.id)
+}
 </script>
 
 <template>
   <div class="space-y-4">
-    <div class="flex">
+    <div class="flex justify-between items-center">
       <div>
         <UInput v-model="searchTerm" placeholder="Gruppen suchen..." leading-icon="i-lucide-search" />
       </div>
+      <UButton icon="i-lucide-plus" @click="openCreate">
+        Neue Gruppe
+      </UButton>
     </div>
 
     <UTable
       v-model:sorting="sorting"
       :columns="columns"
       :data="data?.items"
+      :ui="{ tr: 'cursor-pointer hover:bg-elevated/50' }"
+      @select="onRowClick"
     />
 
     <div class="flex">
@@ -73,7 +101,8 @@ const columns: TableColumn<RoleItem>[] = [
         <UPagination v-model:page="page" :total="data?.meta.totalItems" />
       </div>
     </div>
+
+    <!-- Role Form Slideover -->
+    <RoleFormSlideover />
   </div>
 </template>
-
-<style></style>

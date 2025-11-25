@@ -38,6 +38,8 @@ export interface PaginationConfig<
   searchableColumns?: PgColumn[]
   /** Map of field names to columns that can be sorted. Keys are the API field names, values are the actual columns */
   sortableColumns?: Record<string, PgColumn>
+  /** Default sort when no orderBy is specified. Format: { column, direction } */
+  defaultSort?: { column: PgColumn, direction: 'asc' | 'desc' }
   /** Additional WHERE filter to apply */
   baseFilter?: SQL
   /** Relations to include in the query */
@@ -127,6 +129,7 @@ export async function paginateQuery<
   const {
     searchableColumns,
     sortableColumns = {},
+    defaultSort,
     baseFilter,
     with: withRelations,
   } = config
@@ -148,8 +151,11 @@ export async function paginateQuery<
     whereClause = baseFilter ?? searchFilter
   }
 
-  // Parse sorting from orderBy strings
-  const orderByClause = parseSortOrder(pagination.orderBy, sortableColumns)
+  // Parse sorting from orderBy strings, fall back to defaultSort if none specified
+  let orderByClause = parseSortOrder(pagination.orderBy, sortableColumns)
+  if (orderByClause.length === 0 && defaultSort) {
+    orderByClause = [defaultSort.direction === 'desc' ? desc(defaultSort.column) : asc(defaultSort.column)]
+  }
 
   // Build query options
   const queryOptions: QueryConfig<TTableName> = {

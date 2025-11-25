@@ -42,8 +42,10 @@ const birthdateValue = ref<DateValue | undefined>()
 
 // Helper to compare dates
 function isSameDate(date: Date | null, calDate: DateValue | undefined): boolean {
-  if (!date && !calDate) return true
-  if (!date || !calDate) return false
+  if (!date && !calDate)
+    return true
+  if (!date || !calDate)
+    return false
   return date.getFullYear() === calDate.year
     && date.getMonth() + 1 === calDate.month
     && date.getDate() === calDate.day
@@ -51,7 +53,8 @@ function isSameDate(date: Date | null, calDate: DateValue | undefined): boolean 
 
 // Sync from state to local ref when member data loads
 watch(() => state.birthdate, (date) => {
-  if (isSameDate(date, birthdateValue.value)) return
+  if (isSameDate(date, birthdateValue.value))
+    return
   if (date) {
     birthdateValue.value = new CalendarDate(
       date.getFullYear(),
@@ -66,7 +69,8 @@ watch(() => state.birthdate, (date) => {
 
 // Sync from local ref to state when user changes date
 watch(birthdateValue, (value) => {
-  if (isSameDate(state.birthdate, value)) return
+  if (isSameDate(state.birthdate, value))
+    return
   if (value && value.year >= 1900) {
     state.birthdate = new Date(value.year, value.month - 1, value.day)
   }
@@ -101,6 +105,7 @@ const slideoverOpen = computed({
     v-model:open="slideoverOpen"
     :title="isEditMode ? 'Mitglied bearbeiten' : 'Neues Mitglied'"
     :description="isEditMode ? 'Bearbeite die Mitgliedsdaten' : 'Füge ein neues Mitglied hinzu'"
+    :dismissible="false"
   >
     <template #body>
       <div v-if="isMemberLoading && isEditMode" class="flex items-center justify-center py-8">
