@@ -108,10 +108,10 @@ function toggleExpand() {
 </script>
 
 <template>
-  <div class="border border-muted rounded-lg">
+  <UPageCard variant="subtle">
     <!-- Option Header -->
     <div
-      class="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50"
+      class="flex items-center justify-between cursor-pointer"
       @click="toggleExpand"
     >
       <div class="flex items-center gap-3">
@@ -135,19 +135,20 @@ function toggleExpand() {
       <div class="flex items-center gap-2" @click.stop>
         <UButton
           icon="i-lucide-trash-2"
-          size="xs"
+          size="sm"
           color="error"
           variant="ghost"
-          aria-label="Option löschen"
           :loading="deleteOptionMutation.isLoading.value"
           :disabled="updateOptionMutation.isLoading.value || createPeriodMutation.isLoading.value"
           @click="handleDeleteOption"
-        />
+        >
+          Option löschen
+        </UButton>
       </div>
     </div>
 
     <!-- Option Content (expanded) -->
-    <div v-if="isExpanded" class="border-t border-muted p-4 space-y-4">
+    <div v-if="isExpanded" class="mt-4 space-y-4">
       <!-- Option Fields -->
       <div class="grid grid-cols-2 gap-4">
         <UFormField label="Name">
@@ -207,5 +208,5 @@ function toggleExpand() {
         </div>
       </div>
     </div>
-  </div>
+  </UPageCard>
 </template>

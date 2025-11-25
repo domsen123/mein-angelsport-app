@@ -24,7 +24,8 @@ const defaultState = (): ClubEventFormState => ({
 
 // Helper to format Date to datetime-local input format (in local timezone)
 function formatDateForInput(date: Date | string | null | undefined): string {
-  if (!date) return ''
+  if (!date)
+    return ''
   const d = typeof date === 'string' ? new Date(date) : date
   // Format: YYYY-MM-DDTHH:mm in local timezone
   const year = d.getFullYear()

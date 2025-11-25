@@ -52,7 +52,8 @@ const statusOptions = [
 const slideoverOpen = computed({
   get: () => isOpen.value,
   set: (value) => {
-    if (!value) close()
+    if (!value)
+      close()
   },
 })
 
@@ -64,14 +65,16 @@ const currencyFormatter = new Intl.NumberFormat('de-DE', {
 
 // Helper to convert cents to Euro display
 const formatCentsToEuro = (cents: string | null): string => {
-  if (!cents) return ''
+  if (!cents)
+    return ''
   const num = Number.parseInt(cents, 10)
   return Number.isNaN(num) ? '' : currencyFormatter.format(num / 100)
 }
 
 // Helper to convert Euro input to cents
 const euroToCents = (euro: string): string => {
-  if (!euro) return ''
+  if (!euro)
+    return ''
   const num = Number.parseFloat(euro.replace(/[€\s.]/g, '').replace(',', '.'))
   return Number.isNaN(num) ? '' : Math.round(num * 100).toString()
 }
@@ -89,10 +92,13 @@ watch(priceEuro, (euro) => {
 
 // Handle member selection - populate owner fields from selected member
 const onMemberSelect = (member: { id: string, firstName: string | null, lastName: string | null, email: string | null, phone: string | null } | null) => {
-  if (!member) return
+  if (!member)
+    return
   state.ownerName = [member.firstName, member.lastName].filter(Boolean).join(' ') || null
-  if (member.email) state.ownerEmail = member.email
-  if (member.phone) state.ownerPhone = member.phone
+  if (member.email)
+    state.ownerEmail = member.email
+  if (member.phone)
+    state.ownerPhone = member.phone
 }
 </script>
 

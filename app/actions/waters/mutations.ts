@@ -1,5 +1,6 @@
 import type { UpdateWaterCommand } from '~~/server/actions/water/update-water'
-import { type CreateWaterInput, useWaterClient } from './api'
+import type { CreateWaterInput } from './api'
+import { useWaterClient } from './api'
 import { WATER_QUERY_KEYS } from './queries'
 
 export function useCreateWaterMutation() {

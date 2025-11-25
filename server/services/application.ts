@@ -1,7 +1,3 @@
-import type { DirectusEvent, DirectusMember } from './directus'
-import { ulid } from 'ulid'
-import { getDatabase } from '../../server/database/client'
-import { club, clubMember, clubMemberRole, clubRole, water } from '../../server/database/schema'
 import { auth } from '../../server/utils/auth'
 
 export const createUser = async (): Promise<string> => {

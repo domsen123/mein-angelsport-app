@@ -196,17 +196,17 @@ async function handleDelete() {
 </script>
 
 <template>
-  <div class="bg-muted/30 rounded-lg p-3 relative">
+  <div class="bg-muted/30 rounded-lg p-4 relative">
     <!-- Saving indicator -->
     <UIcon
       v-if="updatePeriodMutation.isLoading.value"
       name="i-lucide-loader-2"
-      class="absolute top-2 right-2 size-4 animate-spin text-muted-foreground"
+      class="absolute top-3 right-3 size-4 animate-spin text-muted-foreground"
     />
 
-    <div class="grid grid-cols-6 gap-3 items-end">
-      <!-- Valid From -->
-      <UFormField label="Gültig von" class="col-span-1">
+    <!-- Row 1: Dates and Price -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <UFormField label="Gültig von">
         <UInputDate
           v-model="validFrom"
           class="w-full"
@@ -215,8 +215,7 @@ async function handleDelete() {
         />
       </UFormField>
 
-      <!-- Valid To -->
-      <UFormField label="Gültig bis" class="col-span-1">
+      <UFormField label="Gültig bis">
         <UInputDate
           v-model="validTo"
           class="w-full"
@@ -225,8 +224,7 @@ async function handleDelete() {
         />
       </UFormField>
 
-      <!-- Price -->
-      <UFormField label="Preis (€)" class="col-span-1">
+      <UFormField label="Preis (€)">
         <UInput
           v-model="priceEuro"
           placeholder="0,00"
@@ -236,9 +234,11 @@ async function handleDelete() {
           @blur="handleUpdate"
         />
       </UFormField>
+    </div>
 
-      <!-- Permit Number Start -->
-      <UFormField label="Nummer von" class="col-span-1">
+    <!-- Row 2: Permit Numbers -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <UFormField label="Kartennummer von">
         <UInput
           v-model.number="permitNumberStart"
           type="number"
@@ -250,8 +250,7 @@ async function handleDelete() {
         />
       </UFormField>
 
-      <!-- Permit Number End -->
-      <UFormField label="Nummer bis" class="col-span-1">
+      <UFormField label="Kartennummer bis">
         <UInput
           v-model.number="permitNumberEnd"
           type="number"
@@ -262,33 +261,34 @@ async function handleDelete() {
           @blur="handleUpdate"
         />
       </UFormField>
+    </div>
 
-      <!-- Actions -->
-      <div class="col-span-1 flex justify-end gap-1">
-        <UButton
-          icon="i-lucide-ticket"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          aria-label="Karten verwalten"
-          :to="`/verein/${props.clubSlug}/_admin/permits/${props.permitId}/periods/${props.period.id}/instances?optionId=${props.optionId}`"
-          :disabled="isUpdating"
-        />
-        <UButton
-          icon="i-lucide-trash-2"
-          size="xs"
-          color="error"
-          variant="ghost"
-          aria-label="Zeitraum löschen"
-          :loading="deletePeriodMutation.isLoading.value"
-          :disabled="updatePeriodMutation.isLoading.value"
-          @click="handleDelete"
-        />
-      </div>
+    <!-- Row 3: Actions -->
+    <div class="flex items-center justify-between mt-4 pt-4 border-t border-dashed border-muted">
+      <UButton
+        icon="i-lucide-ticket"
+        variant="soft"
+        color="primary"
+        :to="`/verein/${props.clubSlug}/_admin/permits/${props.permitId}/periods/${props.period.id}/instances?optionId=${props.optionId}`"
+        :disabled="isUpdating"
+      >
+        Karten verwalten
+      </UButton>
+
+      <UButton
+        icon="i-lucide-trash-2"
+        color="error"
+        variant="ghost"
+        :loading="deletePeriodMutation.isLoading.value"
+        :disabled="updatePeriodMutation.isLoading.value"
+        @click="handleDelete"
+      >
+        Zeitraum löschen
+      </UButton>
     </div>
 
     <!-- Validation Errors -->
-    <div v-if="validationErrors.length" class="mt-2 text-sm text-red-500">
+    <div v-if="validationErrors.length" class="mt-3 text-sm text-error">
       {{ validationErrors.join(', ') }}
     </div>
   </div>

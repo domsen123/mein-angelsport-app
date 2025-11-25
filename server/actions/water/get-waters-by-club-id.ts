@@ -1,6 +1,5 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import type { PaginationParams } from '~~/server/utils/validation'
 import { eq } from 'drizzle-orm'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'

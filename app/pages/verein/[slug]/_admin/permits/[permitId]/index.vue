@@ -1,202 +1,191 @@
 <script lang="ts" setup>
-import {
-  useAssignWaterToPermitMutation,
-  useCreatePermitMutation,
-  useRemoveWaterFromPermitMutation,
-  useUpdatePermitMutation,
-} from '~/actions/permits/mutations'
-import { usePermitByIdQuery } from '~/actions/permits/queries'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import type * as z from 'zod'
+import { useCreatePermitOptionMutation } from '~/actions/permits/mutations'
+import { permitFormSchema } from '~/composables/usePermitPageForm'
 
-const route = useRoute()
-const { club, clubSlug, getClubWaters } = useClub()
+const { club } = useClub()
+const clubSlug = computed(() => club.value?.slug || '')
+const toast = useToast()
 
-const permitId = computed(() => route.params.permitId as string)
-const isCreateMode = computed(() => permitId.value === 'new')
+const {
+  permitId,
+  isEditMode,
+  isCreateMode,
+  state,
+  permitData,
+  waterOptions,
+  isLoading,
+  isPermitLoading,
+  submit,
+} = usePermitPageForm()
 
-// Queries
-const { data: permitData, isLoading: isPermitLoading } = useQuery(usePermitByIdQuery, () => ({
-  clubId: club.value!.id,
-  permitId: permitId.value,
-}))
+type Schema = z.output<typeof permitFormSchema>
 
-const { data: clubWaters } = getClubWaters()
+const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
+  await submit()
+}
 
-// Mutations
-const createPermitMutation = useCreatePermitMutation()
-const updatePermitMutation = useUpdatePermitMutation()
-const assignWaterMutation = useAssignWaterToPermitMutation()
-const removeWaterMutation = useRemoveWaterFromPermitMutation()
-
-// Form state
-const permitName = ref('')
-const selectedWaterIds = ref<string[]>([])
-
-// Initialize form when data loads
-watch(permitData, (data) => {
-  if (data) {
-    permitName.value = data.name
-    selectedWaterIds.value = data.waters.map(w => w.waterId)
-  }
-}, { immediate: true })
-
-// Water options for select
-const waterOptions = computed(() => {
-  return clubWaters.value?.map(water => ({
-    label: `${water.name} (${water.type === 'lotic' ? 'Fließgewässer' : 'Stillgewässer'})`,
-    value: water.id,
-  })) ?? []
+// Page title
+const pageTitle = computed(() => {
+  if (isCreateMode.value)
+    return 'Neuer Erlaubnisschein'
+  if (permitData.value)
+    return permitData.value.name
+  return 'Erlaubnisschein bearbeiten'
 })
 
-// Create permit and redirect
-async function handleCreatePermit() {
-  if (!club.value?.id || !permitName.value.trim())
+const pageDescription = computed(() => {
+  return isCreateMode.value
+    ? 'Erstelle einen neuen Erlaubnisschein'
+    : 'Bearbeite die Erlaubnisschein-Einstellungen'
+})
+
+// Option creation mutation (moved from PermitOptionsSection)
+const createOptionMutation = useCreatePermitOptionMutation()
+
+const handleAddOption = async () => {
+  if (!club.value?.id || !permitId.value)
     return
 
-  const result = await createPermitMutation.mutateAsync({
-    clubId: club.value.id,
-    name: permitName.value.trim(),
-  })
-
-  // Redirect to edit page
-  if (result?.id) {
-    await navigateTo(`/verein/${clubSlug.value}/_admin/permits/${result.id}`)
+  try {
+    await createOptionMutation.mutateAsync({
+      clubId: club.value.id,
+      permitId: permitId.value,
+    })
+  }
+  catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Die Option konnte nicht erstellt werden.'
+    toast.add({
+      title: 'Fehler beim Erstellen',
+      description: message,
+      color: 'error',
+    })
   }
 }
 
-// Update permit name
-async function handleUpdateName() {
-  if (!club.value?.id || !permitId.value || isCreateMode.value)
-    return
-
-  await updatePermitMutation.mutateAsync({
-    clubId: club.value.id,
-    permitId: permitId.value,
-    name: permitName.value.trim(),
-  })
-}
-
-// Handle water selection change
-async function handleWaterToggle(waterId: string) {
-  if (!club.value?.id || !permitId.value || isCreateMode.value)
-    return
-
-  const isCurrentlyAssigned = selectedWaterIds.value.includes(waterId)
-
-  if (isCurrentlyAssigned) {
-    await removeWaterMutation.mutateAsync({
-      clubId: club.value.id,
-      permitId: permitId.value,
-      waterId,
-    })
-    selectedWaterIds.value = selectedWaterIds.value.filter(id => id !== waterId)
+// Helper to toggle water selection
+const toggleWater = (waterId: string, checked: boolean) => {
+  if (checked) {
+    state.selectedWaterIds = [...state.selectedWaterIds, waterId]
   }
   else {
-    await assignWaterMutation.mutateAsync({
-      clubId: club.value.id,
-      permitId: permitId.value,
-      waterId,
-    })
-    selectedWaterIds.value = [...selectedWaterIds.value, waterId]
+    state.selectedWaterIds = state.selectedWaterIds.filter(id => id !== waterId)
   }
-}
-
-function goBack() {
-  navigateTo(`/verein/${clubSlug.value}/_admin/permits`)
 }
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center gap-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        color="neutral"
-        variant="ghost"
-        @click="goBack"
+  <div v-if="isPermitLoading && isEditMode" class="flex items-center justify-center py-8">
+    <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
+  </div>
+
+  <UForm v-else id="permit-form" :schema="permitFormSchema" :state="state" class="lg:max-w-3xl" @submit="onSubmit">
+    <UPageCard
+      :title="pageTitle"
+      :description="pageDescription"
+      variant="naked"
+      orientation="horizontal"
+      class="mb-4"
+    >
+      <div class="flex gap-2 w-fit lg:ms-auto">
+        <UButton
+          :to="`/verein/${clubSlug}/_admin/permits`"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-arrow-left"
+        >
+          Zurück
+        </UButton>
+        <UButton
+          form="permit-form"
+          :label="isCreateMode ? 'Erstellen' : 'Speichern'"
+          color="primary"
+          type="submit"
+          :loading="isLoading"
+        />
+      </div>
+    </UPageCard>
+
+    <!-- General Section -->
+    <UPageCard
+      title="Allgemein"
+      description="Name des Erlaubnisscheins"
+      variant="naked"
+      orientation="horizontal"
+      class="mt-8 mb-4"
+    />
+    <UPageCard variant="subtle">
+      <UFormField
+        name="name"
+        label="Name"
+        description="z.B. Tageskarte, Jahreskarte..."
+        required
+        class="grid md:grid-cols-2 gap-4"
+      >
+        <UInput v-model="state.name" placeholder="z.B. Tageskarte, Jahreskarte..." class="w-full" />
+      </UFormField>
+    </UPageCard>
+
+    <!-- Waters Section (edit mode only) -->
+    <template v-if="isEditMode">
+      <UPageCard
+        title="Gewässer"
+        description="Gewässer, für die dieser Erlaubnisschein gilt"
+        variant="naked"
+        orientation="horizontal"
+        class="mt-8 mb-4"
       />
-      <h1 class="text-2xl font-bold">
-        {{ isCreateMode ? 'Neuer Erlaubnisschein' : 'Erlaubnisschein bearbeiten' }}
-      </h1>
-    </div>
-
-    <!-- Loading state -->
-    <div v-if="!isCreateMode && isPermitLoading" class="flex items-center justify-center py-12">
-      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
-    </div>
-
-    <template v-else>
-      <!-- General Section -->
-      <UCard>
-        <template #header>
-          <h2 class="text-lg font-semibold">
-            Allgemein
-          </h2>
-        </template>
-
-        <div class="space-y-4">
-          <UFormField label="Name" required>
-            <UInput
-              v-model="permitName"
-              placeholder="z.B. Tageskarte, Jahreskarte..."
-              class="w-full"
-              @blur="!isCreateMode && handleUpdateName()"
-            />
-          </UFormField>
-
-          <div v-if="isCreateMode" class="flex justify-end">
-            <UButton
-              :loading="createPermitMutation.isLoading.value"
-              :disabled="!permitName.trim()"
-              @click="handleCreatePermit"
-            >
-              Erlaubnisschein erstellen
-            </UButton>
-          </div>
+      <UPageCard variant="subtle">
+        <div v-if="waterOptions.length === 0" class="text-sm text-muted">
+          Keine Gewässer verfügbar. Bitte füge zuerst Gewässer zum Verein hinzu.
         </div>
-      </UCard>
 
-      <!-- Waters Section (only in edit mode) -->
-      <UCard v-if="!isCreateMode">
-        <template #header>
-          <h2 class="text-lg font-semibold">
-            Gewässer
-          </h2>
-        </template>
-
-        <div class="space-y-4">
-          <p class="text-sm text-muted">
-            Wähle die Gewässer aus, für die dieser Erlaubnisschein gilt.
-          </p>
-
-          <div v-if="waterOptions.length === 0" class="text-sm text-muted">
-            Keine Gewässer verfügbar. Bitte füge zuerst Gewässer zum Verein hinzu.
-          </div>
-
-          <div v-else class="space-y-2">
-            <div
-              v-for="option in waterOptions"
-              :key="option.value"
-              class="flex items-center gap-2"
-            >
-              <UCheckbox
-                :model-value="selectedWaterIds.includes(option.value)"
-                :label="option.label"
-                @update:model-value="handleWaterToggle(option.value)"
+        <template v-else>
+          <UFormField
+            v-for="water in waterOptions"
+            :key="water.value"
+            :label="water.name"
+            :description="water.typeLabel"
+            class="grid md:grid-cols-2 gap-4"
+          >
+            <div class="flex items-center justify-end">
+              <USwitch
+                :model-value="state.selectedWaterIds.includes(water.value)"
+                @update:model-value="(checked: boolean) => toggleWater(water.value, checked)"
               />
             </div>
-          </div>
-        </div>
-      </UCard>
+          </UFormField>
+        </template>
+      </UPageCard>
+    </template>
 
-      <!-- Options Section (only in edit mode) -->
+    <!-- Options Section (edit mode only) -->
+    <template v-if="isEditMode && club?.id && permitId && permitId !== 'new'">
+      <UPageCard
+        title="Optionen"
+        description="Verschiedene Varianten und Preise für diesen Erlaubnisschein"
+        variant="naked"
+        orientation="horizontal"
+        class="mt-8 mb-4"
+      >
+        <div class="flex gap-2 w-fit lg:ms-auto">
+          <UButton
+            icon="i-lucide-plus"
+            variant="outline"
+            :loading="createOptionMutation.isLoading.value"
+            @click="handleAddOption"
+          >
+            Option hinzufügen
+          </UButton>
+        </div>
+      </UPageCard>
       <PermitOptionsSection
-        v-if="!isCreateMode && club?.id"
         :club-id="club.id"
         :permit-id="permitId"
         :options="permitData?.options ?? []"
         :club-slug="clubSlug"
       />
     </template>
-  </div>
+  </UForm>
 </template>

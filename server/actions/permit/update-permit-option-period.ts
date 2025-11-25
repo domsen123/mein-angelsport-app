@@ -45,11 +45,16 @@ export const _updatePermitOptionPeriod = async (
     updatedBy: context.userId,
   }
 
-  if (data.validFrom !== undefined) updateData.validFrom = new Date(data.validFrom)
-  if (data.validTo !== undefined) updateData.validTo = new Date(data.validTo)
-  if (data.priceCents !== undefined) updateData.priceCents = data.priceCents
-  if (data.permitNumberStart !== undefined) updateData.permitNumberStart = data.permitNumberStart
-  if (data.permitNumberEnd !== undefined) updateData.permitNumberEnd = data.permitNumberEnd
+  if (data.validFrom !== undefined)
+    updateData.validFrom = new Date(data.validFrom)
+  if (data.validTo !== undefined)
+    updateData.validTo = new Date(data.validTo)
+  if (data.priceCents !== undefined)
+    updateData.priceCents = data.priceCents
+  if (data.permitNumberStart !== undefined)
+    updateData.permitNumberStart = data.permitNumberStart
+  if (data.permitNumberEnd !== undefined)
+    updateData.permitNumberEnd = data.permitNumberEnd
 
   const [updatedPeriod] = await db
     .update(permitOptionPeriod)

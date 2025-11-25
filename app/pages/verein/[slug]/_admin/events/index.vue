@@ -16,7 +16,8 @@ const UIcon = resolveComponent('UIcon')
 
 // Helper to format dates
 function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return '-'
+  if (!date)
+    return '-'
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleDateString('de-DE', {
     day: '2-digit',

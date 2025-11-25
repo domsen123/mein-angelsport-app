@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import type { FormSubmitEvent } from '@nuxt/ui'
-import type { Form } from '@nuxt/ui'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
 import * as z from 'zod'
 
 const { club } = useClub()

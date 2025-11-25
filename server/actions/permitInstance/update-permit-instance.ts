@@ -55,13 +55,20 @@ const _updatePermitInstance = async (
     }
   }
 
-  if (data.ownerMemberId !== undefined) updateData.ownerMemberId = data.ownerMemberId
-  if (data.ownerName !== undefined) updateData.ownerName = data.ownerName
-  if (data.ownerEmail !== undefined) updateData.ownerEmail = data.ownerEmail
-  if (data.ownerPhone !== undefined) updateData.ownerPhone = data.ownerPhone
-  if (data.paymentReference !== undefined) updateData.paymentReference = data.paymentReference
-  if (data.paidCents !== undefined) updateData.paidCents = data.paidCents
-  if (data.notes !== undefined) updateData.notes = data.notes
+  if (data.ownerMemberId !== undefined)
+    updateData.ownerMemberId = data.ownerMemberId
+  if (data.ownerName !== undefined)
+    updateData.ownerName = data.ownerName
+  if (data.ownerEmail !== undefined)
+    updateData.ownerEmail = data.ownerEmail
+  if (data.ownerPhone !== undefined)
+    updateData.ownerPhone = data.ownerPhone
+  if (data.paymentReference !== undefined)
+    updateData.paymentReference = data.paymentReference
+  if (data.paidCents !== undefined)
+    updateData.paidCents = data.paidCents
+  if (data.notes !== undefined)
+    updateData.notes = data.notes
 
   const [updatedInstance] = await db
     .update(permitInstance)

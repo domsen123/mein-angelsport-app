@@ -1,9 +1,9 @@
-import type { BuildQueryResult, DBQueryConfig, ExtractTablesWithRelations } from 'drizzle-orm'
+import type { BuildQueryResult, DBQueryConfig, ExtractTablesWithRelations, SQL } from 'drizzle-orm'
 import type { PgColumn, PgTable, TableConfig } from 'drizzle-orm/pg-core'
 import type { PaginationParams } from '~~/server/utils/validation'
 import type { DatabaseClient } from './client'
 import type * as schema from './schema'
-import { asc, desc, SQL } from 'drizzle-orm'
+import { asc, desc } from 'drizzle-orm'
 import { buildSearchFilter } from './helper'
 
 // Extract the schema type for relations

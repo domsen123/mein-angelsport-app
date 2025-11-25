@@ -106,7 +106,8 @@ const columns: TableColumn<InstanceItem>[] = [
     header: ({ column }) => useSortableHeader(column, 'Verkauft am', UButton),
     cell: ({ row }) => {
       const soldAt = row.original.soldAt
-      if (!soldAt) return '-'
+      if (!soldAt)
+        return '-'
       return new Date(soldAt).toLocaleDateString('de-DE')
     },
   },
@@ -139,17 +140,24 @@ const stats = computed(() => data.value?.stats ?? null)
 <template>
   <div class="space-y-4">
     <!-- Header with back link -->
-    <div class="flex items-center gap-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        color="neutral"
-        :to="`/verein/${route.params.slug}/_admin/permits/${permitId}`"
-      />
-      <h2 class="text-xl font-semibold">
-        Erlaubniskarten verwalten
-      </h2>
-    </div>
+    <UPageCard
+      title="Erlaubniskarten verwalten"
+      description="Verwalte die einzelnen Karten dieser Periode"
+      variant="naked"
+      orientation="horizontal"
+      class="mb-4"
+    >
+      <div class="flex gap-2 w-fit lg:ms-auto">
+        <UButton
+          :to="`/verein/${route.params.slug}/_admin/permits/${permitId}`"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-arrow-left"
+        >
+          Zurück
+        </UButton>
+      </div>
+    </UPageCard>
 
     <!-- Stats -->
     <div v-if="stats" class="flex gap-4 text-sm">
