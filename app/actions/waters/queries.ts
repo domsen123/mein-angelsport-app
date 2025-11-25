@@ -30,6 +30,6 @@ export const useWaterByIdQuery = ({ clubId, waterId }: GetWaterByIdCommandInput)
   defineQueryOptions({
     key: WATER_QUERY_KEYS.getWaterById({ clubId, waterId }),
     query: () => useWaterClient().getWaterById({ clubId, waterId }),
-    enabled: !!clubId && !!waterId,
+    enabled: !!clubId && !!waterId && waterId !== 'new',
     staleTime: 1000 * 60 * 20,
   })

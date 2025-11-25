@@ -1,12 +1,14 @@
-import type { MaybeRef } from 'vue'
+import * as z from 'zod'
 import { useCreateWaterMutation, useUpdateWaterMutation } from '~/actions/waters/mutations'
 import { useWaterByIdQuery } from '~/actions/waters/queries'
 
-export interface WaterFormState {
-  type: 'lotic' | 'lentic'
-  name: string
-  postCode: string
-}
+export const waterFormSchema = z.object({
+  type: z.enum(['lotic', 'lentic']),
+  name: z.string().min(1, 'Gewässername ist erforderlich').max(100, 'Name darf maximal 100 Zeichen lang sein'),
+  postCode: z.string().min(1, 'Postleitzahl ist erforderlich').max(10, 'Postleitzahl darf maximal 10 Zeichen lang sein'),
+})
+
+export type WaterFormState = z.infer<typeof waterFormSchema>
 
 const defaultState = (): WaterFormState => ({
   type: 'lentic',
@@ -14,42 +16,38 @@ const defaultState = (): WaterFormState => ({
   postCode: '',
 })
 
-export function useWaterForm(clubId: MaybeRef<string | undefined>) {
+export const useWaterPageForm = () => {
   const route = useRoute()
-  const router = useRouter()
   const toast = useToast()
+  const { club } = useClub()
 
-  // Mode detection
-  const waterId = computed(() => route.query.waterId as string | undefined)
+  // Mode detection via route param
+  const waterId = computed(() => route.params.waterId as string | undefined)
   const isCreateMode = computed(() => waterId.value === 'new')
   const isEditMode = computed(() => !!waterId.value && waterId.value !== 'new')
-  const isOpen = computed(() => !!waterId.value)
 
   // Form state
   const state = reactive<WaterFormState>(defaultState())
 
-  // Get clubId as ref
-  const clubIdRef = computed(() => toValue(clubId))
+  // Get clubId
+  const clubId = computed(() => club.value?.id)
+  const clubSlug = computed(() => club.value?.slug)
 
   // Fetch water data in edit mode
   const { data: waterData, isLoading: isWaterLoading } = useQuery(useWaterByIdQuery, () => ({
-    clubId: clubIdRef.value!,
+    clubId: clubId.value!,
     waterId: waterId.value!,
   }))
 
-  // Watch water data to populate form
-  watch(waterData, (water) => {
-    if (water) {
+  // Single watcher for form population
+  watch([isCreateMode, waterData], ([isCreate, water]) => {
+    if (isCreate) {
+      Object.assign(state, defaultState())
+    }
+    else if (water) {
       state.type = water.type || 'lentic'
       state.name = water.name || ''
       state.postCode = water.postCode || ''
-    }
-  }, { immediate: true })
-
-  // Reset form when switching to create mode
-  watch(isCreateMode, (isCreate) => {
-    if (isCreate) {
-      Object.assign(state, defaultState())
     }
   }, { immediate: true })
 
@@ -58,15 +56,15 @@ export function useWaterForm(clubId: MaybeRef<string | undefined>) {
   const updateMutation = useUpdateWaterMutation()
 
   const isLoading = computed(() =>
-    isWaterLoading.value
-    || createMutation.isLoading.value
+    createMutation.isLoading.value
     || updateMutation.isLoading.value,
   )
 
   // Submit handler
-  async function submit() {
-    const currentClubId = clubIdRef.value
-    if (!currentClubId)
+  const submit = async () => {
+    const currentClubId = clubId.value
+    const currentSlug = clubSlug.value
+    if (!currentClubId || !currentSlug)
       return
 
     try {
@@ -97,31 +95,17 @@ export function useWaterForm(clubId: MaybeRef<string | undefined>) {
           color: 'success',
         })
       }
-      close()
+      // Navigate back to waters list
+      await navigateTo(`/verein/${currentSlug}/_admin/waters`)
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten.'
       toast.add({
         title: 'Fehler',
-        description: error?.message || 'Ein Fehler ist aufgetreten.',
+        description: message,
         color: 'error',
       })
     }
-  }
-
-  // Close handler - remove query param
-  function close() {
-    const query = { ...route.query }
-    delete query.waterId
-    router.replace({ query })
-  }
-
-  // Open handlers
-  function openCreate() {
-    router.push({ query: { ...route.query, waterId: 'new' } })
-  }
-
-  function openEdit(id: string) {
-    router.push({ query: { ...route.query, waterId: id } })
   }
 
   return {
@@ -129,7 +113,6 @@ export function useWaterForm(clubId: MaybeRef<string | undefined>) {
     waterId,
     isCreateMode,
     isEditMode,
-    isOpen,
     // State
     state,
     waterData,
@@ -138,8 +121,5 @@ export function useWaterForm(clubId: MaybeRef<string | undefined>) {
     isWaterLoading,
     // Actions
     submit,
-    close,
-    openCreate,
-    openEdit,
   }
 }

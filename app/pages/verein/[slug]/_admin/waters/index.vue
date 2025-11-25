@@ -9,8 +9,10 @@ const { data } = getWatersPaginated(pagination)
 
 type WaterItem = NonNullable<typeof data.value>['items'][number]
 
-// Form composable for opening slideover
-const { openCreate, openEdit } = useWaterForm(computed(() => club.value?.id))
+const clubSlug = computed(() => club.value?.slug || '')
+
+const openCreate = () => navigateTo(`/verein/${clubSlug.value}/_admin/waters/new`)
+const openEdit = (id: string) => navigateTo(`/verein/${clubSlug.value}/_admin/waters/${id}`)
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
@@ -83,8 +85,5 @@ function onRowClick(_e: Event, row: { original: WaterItem }) {
         <UPagination v-model:page="page" :total="data?.meta.totalItems" />
       </div>
     </div>
-
-    <!-- Water Form Slideover -->
-    <WaterFormSlideover />
   </div>
 </template>
