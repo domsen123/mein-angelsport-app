@@ -55,16 +55,16 @@ export const _getClubMembersByClubId = async (
     },
   })
 
-  // Flatten user data into member
-  const items = result.items.map((member) => {
-    if (member.user) {
-      Object.assign(member, member.user)
-      Reflect.deleteProperty(member, 'user')
-    }
-    return member
-  })
+  // // Flatten user data into member
+  // const items = result.items.map((member) => {
+  //   if (member.user) {
+  //     Object.assign(member, member.user)
+  //     Reflect.deleteProperty(member, 'user')
+  //   }
+  //   return member
+  // })
 
-  return { ...result, items }
+  return result
 }, tx)
 
 export const getClubMembersByClubId = async (

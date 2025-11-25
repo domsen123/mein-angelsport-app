@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@nuxt/image": "2.0.0",
-    "@nuxt/ui": "4.1.0",
+    "@nuxt/ui": "4.2.1",
     "@nuxtjs/mdc": "^0.18.3",
     "@nuxtjs/seo": "^3.2.2",
     "@pinia/colada": "^0.17.8",

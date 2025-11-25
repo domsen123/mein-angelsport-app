@@ -1,14 +1,14 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { ulid } from 'ulid'
+import { and, eq } from 'drizzle-orm'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { clubMember } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
-export const CreateInitalClubMemberCommandSchema = z.object({
+export const UpdateClubMemberCommandSchema = z.object({
   clubId: ulidSchema,
-  userId: ulidSchema.optional(),
+  memberId: ulidSchema,
 
   firstName: z.string().min(1).max(30),
   lastName: z.string().min(1).max(30),
@@ -24,22 +24,18 @@ export const CreateInitalClubMemberCommandSchema = z.object({
   phone: z.string().min(5).max(20).optional().nullable(),
 })
 
-export type CreateInitalClubMemberCommand = z.infer<typeof CreateInitalClubMemberCommandSchema>
+export type UpdateClubMemberCommand = z.infer<typeof UpdateClubMemberCommandSchema>
 
-export const _createClubMember = async (
-  input: CreateInitalClubMemberCommand,
+export const _updateClubMember = async (
+  input: UpdateClubMemberCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
-  const data = CreateInitalClubMemberCommandSchema.parse(input)
+  const data = UpdateClubMemberCommandSchema.parse(input)
 
-  const [createdMember] = await db
-    .insert(clubMember)
-    .values({
-      id: ulid(),
-      clubId: data.clubId,
-      userId: data.userId || null,
-
+  const [updatedMember] = await db
+    .update(clubMember)
+    .set({
       firstName: data.firstName,
       lastName: data.lastName,
       birthdate: data.birthdate || null,
@@ -53,20 +49,30 @@ export const _createClubMember = async (
       email: data.email || null,
       phone: data.phone || null,
 
-      createdBy: context.userId,
       updatedBy: context.userId,
-      createdAt: new Date(),
       updatedAt: new Date(),
     })
+    .where(and(
+      eq(clubMember.id, data.memberId),
+      eq(clubMember.clubId, data.clubId),
+    ))
     .returning()
-  return createdMember
+
+  if (!updatedMember) {
+    throw createError({
+      statusCode: 404,
+      message: 'Member not found',
+    })
+  }
+
+  return updatedMember
 }, tx)
 
-export const createClubMember = async (
-  input: CreateInitalClubMemberCommand,
+export const updateClubMember = async (
+  input: UpdateClubMemberCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
   await isExecutorClubAdmin(input.clubId, context, db)
-  return await _createClubMember(input, context, db)
+  return await _updateClubMember(input, context, db)
 }, tx)

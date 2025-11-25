@@ -48,6 +48,12 @@ const columns: TableColumn<ItemType>[] = [
 - Sorting syncs to URL: `?orderBy=name,-createdAt`
 - Derive item type from data: `type Item = NonNullable<typeof data.value>['items'][number]`
 
+## Pinia-Colada Queries
+
+```typescript
+const { data, isLoading } = useQuery(queryOptions, () => ({ param: value.value }))
+```
+
 ## Key Files
 
 - `server/database/pagination.ts` - Generic pagination helper
