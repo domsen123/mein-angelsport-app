@@ -1,12 +1,14 @@
 import type { InferSelectModel } from 'drizzle-orm'
+import type { CreateClubRoleCommand } from '~~/server/actions/clubRole/create-club-role'
 import type { CreateWaterCommand } from '~~/server/actions/water/create-water'
 import type { clubEvent, clubMember, water } from '~~/server/database/schema'
 import { createClub } from '~~/server/actions/club/create-club'
 import { assignAttendeeToEvent } from '~~/server/actions/clubEvent/assign-attendee-to-event'
 import { createClubEvent } from '~~/server/actions/clubEvent/create-club-event'
-import { createClubMember } from '~~/server/actions/clubMember/create-club-member'
 
+import { createClubMember } from '~~/server/actions/clubMember/create-club-member'
 import { _getClubMemberByNameAndBirthdate } from '~~/server/actions/clubMember/temp/_get-by-name-and-birthdate'
+import { createClubRole } from '~~/server/actions/clubRole/create-club-role'
 import { assignWaterToClub } from '~~/server/actions/clubWater/assign-water-to-club'
 import { createPermit } from '~~/server/actions/permit/create-permit'
 import { createPermitOption } from '~~/server/actions/permit/create-permit-option'
@@ -56,6 +58,18 @@ export default defineEventHandler(async () => {
           clubId: club.id,
           waterId: createdWater.id,
         }, context, tx)
+      }
+
+      // create club roles
+      const roles: CreateClubRoleCommand[] = [
+        { clubId: club.id, name: 'Fischereiaufseher', description: 'Verantwortlich für die Überwachung der Einhaltung der Fischereivorschriften.', isClubAdmin: false, isExemptFromWorkDuties: true },
+        { clubId: club.id, name: 'Rentner', description: 'Mitglied im Ruhestand, von Arbeitsdiensten befreit.', isClubAdmin: false, isExemptFromWorkDuties: true },
+        { clubId: club.id, name: 'Rasenmähergruppe', description: 'Gruppe verantwortlich für das Mähen des Rasens.', isClubAdmin: false, isExemptFromWorkDuties: true },
+        { clubId: club.id, name: 'Arbeitseinsatzbefreit', description: 'Mitglieder, die von Arbeitseinsätzen befreit sind.', isClubAdmin: false, isExemptFromWorkDuties: true },
+      ]
+
+      for (const roleData of roles) {
+        await createClubRole(roleData, context, tx)
       }
 
       // create club members
@@ -211,6 +225,7 @@ export default defineEventHandler(async () => {
         }
       }
     })
+
     return {
       success: true,
     }
