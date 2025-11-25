@@ -11,7 +11,7 @@ useSeoMeta({
   description: 'Verknüpfen Sie Ihre Vereinsmitgliedschaft mit Ihrem Konto',
 })
 
-const router = useRouter()
+// const router = useRouter()
 const clubId = useRouteQuery<string | undefined>('club')
 const validationToken = useRouteQuery<string | undefined>('token')
 

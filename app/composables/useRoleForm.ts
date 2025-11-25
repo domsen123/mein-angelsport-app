@@ -69,7 +69,8 @@ export function useRoleForm(clubId: MaybeRef<string | undefined>) {
   // Submit handler
   async function submit() {
     const currentClubId = clubIdRef.value
-    if (!currentClubId) return
+    if (!currentClubId)
+      return
 
     try {
       if (isCreateMode.value) {

@@ -5,7 +5,6 @@ import * as z from 'zod'
 const { club } = useClub()
 
 const {
-  roleId,
   isEditMode,
   isOpen,
   state,

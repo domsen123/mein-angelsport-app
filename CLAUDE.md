@@ -60,3 +60,4 @@ const { data, isLoading } = useQuery(queryOptions, () => ({ param: value.value }
 - `server/utils/validation.ts` - `paginationSchema` with orderBy preprocessing
 - `app/composables/usePagination.ts` - Client-side pagination + sorting state
 - `app/composables/useSortableHeader.ts` - Sortable column header helper
+- use class="w-full" on all NuxtUi input fields like (UInput, USelect, UTextarea...)

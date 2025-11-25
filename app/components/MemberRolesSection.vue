@@ -23,7 +23,8 @@ const assignedRoleIds = computed(() => new Set(props.memberRoles.map(r => r.role
 
 // Computed: available roles (not yet assigned)
 const availableRoles = computed(() => {
-  if (!rolesData.value?.items) return []
+  if (!rolesData.value?.items)
+    return []
   return rolesData.value.items
     .filter(role => !assignedRoleIds.value.has(role.id))
     .map(role => ({
@@ -37,7 +38,8 @@ const assignRoleMutation = useAssignRoleToMemberMutation()
 const removeRoleMutation = useRemoveRoleFromMemberMutation()
 
 async function addRole() {
-  if (!selectedRole.value) return
+  if (!selectedRole.value)
+    return
 
   try {
     await assignRoleMutation.mutateAsync({

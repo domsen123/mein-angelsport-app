@@ -122,11 +122,11 @@ const slideoverOpen = computed({
         <!-- Personal Data -->
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="Vorname" name="firstName" required>
-            <UInput v-model="state.firstName" placeholder="Max" />
+            <UInput v-model="state.firstName" placeholder="Max" class="w-full" />
           </UFormField>
 
           <UFormField label="Nachname" name="lastName" required>
-            <UInput v-model="state.lastName" placeholder="Mustermann" />
+            <UInput v-model="state.lastName" placeholder="Mustermann" class="w-full" />
           </UFormField>
         </div>
 
@@ -137,31 +137,31 @@ const slideoverOpen = computed({
         <!-- Contact -->
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="E-Mail" name="email">
-            <UInput v-model="state.email" type="email" placeholder="max@beispiel.de" />
+            <UInput v-model="state.email" type="email" placeholder="max@beispiel.de" class="w-full" />
           </UFormField>
 
           <UFormField label="Telefon" name="phone">
-            <UInput v-model="state.phone" type="tel" placeholder="+49 123 456789" />
+            <UInput v-model="state.phone" type="tel" placeholder="+49 123 456789" class="w-full" />
           </UFormField>
         </div>
 
         <!-- Address -->
         <UFormField label="Straße" name="street">
-          <UInput v-model="state.street" placeholder="Musterstraße 123" />
+          <UInput v-model="state.street" placeholder="Musterstraße 123" class="w-full" />
         </UFormField>
 
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="PLZ" name="postalCode">
-            <UInput v-model="state.postalCode" placeholder="12345" />
+            <UInput v-model="state.postalCode" placeholder="12345" class="w-full" />
           </UFormField>
 
           <UFormField label="Stadt" name="city">
-            <UInput v-model="state.city" placeholder="Musterstadt" />
+            <UInput v-model="state.city" placeholder="Musterstadt" class="w-full" />
           </UFormField>
         </div>
 
         <UFormField label="Land" name="country">
-          <UInput v-model="state.country" placeholder="Germany" />
+          <UInput v-model="state.country" placeholder="Germany" class="w-full" />
         </UFormField>
 
         <!-- Preferences -->

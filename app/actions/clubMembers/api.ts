@@ -1,6 +1,6 @@
-import type { GetClubMembersByClubIdCommandInput } from '~~/server/actions/clubMember/get-club-members-by-club-id'
-import type { GetClubMemberByIdCommandInput } from '~~/server/actions/clubMember/get-club-member-by-id'
 import type { CreateInitalClubMemberCommand } from '~~/server/actions/clubMember/create-club-member'
+import type { GetClubMemberByIdCommandInput } from '~~/server/actions/clubMember/get-club-member-by-id'
+import type { GetClubMembersByClubIdCommandInput } from '~~/server/actions/clubMember/get-club-members-by-club-id'
 import type { UpdateClubMemberCommand } from '~~/server/actions/clubMember/update-club-member'
 
 export const useClubMemberClient = () => {
