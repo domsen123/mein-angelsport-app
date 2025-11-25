@@ -66,6 +66,10 @@ export const createClub = async (
     })
     .returning()
 
+  if (!createdClub) {
+    throw new Error('Failed to create club')
+  }
+
   // -- 02. create club member (the creator)
   const { firstName, lastName } = extractFirstAndLastName(user.name || 'Unbekannt')
   const member = await _createClubMember({
@@ -76,12 +80,20 @@ export const createClub = async (
     preferredInvoicingMethod: 'email',
   }, context, db)
 
+  if (!member) {
+    throw new Error('Failed to create club member')
+  }
+
   const role = await _createClubRole({
     clubId,
     name: 'Vorstandschaft',
     isClubAdmin: true,
     isExemptFromWorkDuties: true,
   }, context, db)
+
+  if (!role) {
+    throw new Error('Failed to create club role')
+  }
 
   // -- 04. assign admin role to creator member
   await _assignRoleToMember({

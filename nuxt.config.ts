@@ -21,6 +21,7 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
     '@nuxtjs/mdc',
     '@nuxt/test-utils/module',
+    'nuxt-mcp-dev',
   ],
   css: ['~/assets/css/main.css'],
 })

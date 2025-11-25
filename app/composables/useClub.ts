@@ -1,6 +1,8 @@
 import { useClubBySlugQuery } from '~/actions/club/queries'
 import { useClubMembersByClubIdQuery } from '~/actions/clubMembers/queries'
 import { useClubRolesByClubIdQuery } from '~/actions/clubRoles/queries'
+import { usePermitsByClubIdQuery } from '~/actions/permits/queries'
+import { useWatersByClubIdQuery } from '~/actions/waters/queries'
 
 export const useClub = () => {
   const slug = useRouteParams('slug', '')
@@ -25,6 +27,15 @@ export const useClub = () => {
     pagination: pagination.value,
   }))
 
+  const getPermits = (pagination: ClientPaginationParams['pagination']) => useQuery(usePermitsByClubIdQuery, () => ({
+    clubId: club.value!.id,
+    pagination: pagination.value,
+  }))
+
+  const getClubWaters = () => useQuery(useWatersByClubIdQuery, () => ({
+    clubId: club.value!.id,
+  }))
+
   return {
     club,
     clubSlug: slug,
@@ -36,5 +47,7 @@ export const useClub = () => {
     getWaters,
     getRoles,
     getMembers,
+    getPermits,
+    getClubWaters,
   }
 }

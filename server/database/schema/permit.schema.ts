@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 import { index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { user } from './auth.schema'
 import { club, clubMember } from './club.schema'
+import { water } from './water.schema'
 
 export const permit = pgTable('permit', {
   id: text('id').primaryKey(),
@@ -17,7 +18,7 @@ export const permit = pgTable('permit', {
 
 export const permitWater = pgTable('permit_water', {
   permitId: text('permit_id').references(() => permit.id, { onDelete: 'cascade' }).notNull(),
-  waterId: text('water_id').notNull(),
+  waterId: text('water_id').references(() => water.id, { onDelete: 'cascade' }).notNull(),
 }, t => [
   primaryKey({ columns: [t.permitId, t.waterId] }),
   index('permit_water__water_id_idx').on(t.waterId),
@@ -112,6 +113,11 @@ export const permitRelations = relations(permit, ({ one, many }) => ({
   club: one(club, { fields: [permit.clubId], references: [club.id] }),
   waters: many(permitWater),
   options: many(permitOption),
+}))
+
+export const permitWaterRelations = relations(permitWater, ({ one }) => ({
+  permit: one(permit, { fields: [permitWater.permitId], references: [permit.id] }),
+  water: one(water, { fields: [permitWater.waterId], references: [water.id] }),
 }))
 
 export const permitOptionRelations = relations(permitOption, ({ one, many }) => ({

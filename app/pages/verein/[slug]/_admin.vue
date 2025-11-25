@@ -22,10 +22,10 @@ const { clubSlug } = useClub()
             { icon: 'i-lucide-user', label: 'Mitglieder', to: `/verein/${clubSlug}/_admin/members` },
             { icon: 'i-lucide-users', label: 'Gruppen', to: `/verein/${clubSlug}/_admin/groups` },
           ],
-          // [
-          //   { type: 'label', label: 'Rechtliches', class: [collapsed && 'hidden'] },
-          //   { icon: 'i-lucide-book-open-check', label: 'Erlaubnisscheine', to: toClubRoute('/settings/permits').value },
-          // ],
+          [
+            { type: 'label', label: 'Rechtliches', class: [collapsed && 'hidden'] },
+            { icon: 'i-lucide-book-open-check', label: 'Erlaubnisscheine', to: `/verein/${clubSlug}/_admin/permits` },
+          ],
           // [
           //   { type: 'label', label: 'Reports', class: [collapsed && 'hidden'] },
           //   { icon: 'i-lucide-axe', label: 'Arbeitseinsätze', to: toClubRoute('/settings/reports').value },

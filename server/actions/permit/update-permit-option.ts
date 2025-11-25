@@ -1,53 +1,47 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
 import { eq } from 'drizzle-orm'
-import { ulid } from 'ulid'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { permit, permitOption } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
-export const CreatePermitOptionCommandSchema = z.object({
+export const UpdatePermitOptionCommandSchema = z.object({
   clubId: ulidSchema,
   permitId: ulidSchema,
+  optionId: ulidSchema,
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
 })
 
-export type CreatePermitOptionCommand = z.infer<typeof CreatePermitOptionCommandSchema>
+export type UpdatePermitOptionCommand = z.infer<typeof UpdatePermitOptionCommandSchema>
 
-export const _createPermitOption = async (
-  input: CreatePermitOptionCommand,
+export const _updatePermitOption = async (
+  input: UpdatePermitOptionCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
-  // validation
-  const data = CreatePermitOptionCommandSchema.parse(input)
+  const data = UpdatePermitOptionCommandSchema.parse(input)
 
-  // preparation
-  const now = new Date()
-  const id = ulid()
-
-  // execution
-  const [createdPermitOption] = await db
-    .insert(permitOption)
-    .values({
-      id,
-      permitId: data.permitId,
-      name: data.name || null,
-      description: data.description || null,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: context.userId,
+  const [updatedOption] = await db
+    .update(permitOption)
+    .set({
+      name: data.name ?? null,
+      description: data.description ?? null,
       updatedBy: context.userId,
     })
+    .where(eq(permitOption.id, data.optionId))
     .returning()
 
-  return createdPermitOption
+  if (!updatedOption) {
+    throw new Error('Permit option not found')
+  }
+
+  return updatedOption
 }, tx)
 
-export const createPermitOption = async (
-  input: CreatePermitOptionCommand,
+export const updatePermitOption = async (
+  input: UpdatePermitOptionCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
@@ -62,5 +56,5 @@ export const createPermitOption = async (
   }
 
   await isExecutorClubAdmin(input.clubId, context, db)
-  return _createPermitOption(input, context, db)
+  return _updatePermitOption(input, context, db)
 }, tx)

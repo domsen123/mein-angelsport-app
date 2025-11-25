@@ -1,64 +1,41 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
 import { eq } from 'drizzle-orm'
-import { ulid } from 'ulid'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { permit, permitOption, permitOptionPeriod } from '~~/server/database/schema'
 import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 
-export const CreatePermitOptionPeriodCommandSchema = z.object({
+export const DeletePermitOptionPeriodCommandSchema = z.object({
   clubId: ulidSchema,
   permitId: ulidSchema,
   optionId: ulidSchema,
-
-  validFrom: z.iso.date(),
-  validTo: z.iso.date(),
-
-  priceCents: z.string().min(1),
-  permitNumberStart: z.number().int().min(1),
-  permitNumberEnd: z.number().int().min(1),
+  periodId: ulidSchema,
 })
-export type CreatePermitOptionPeriodCommand = z.infer<typeof CreatePermitOptionPeriodCommandSchema>
 
-export const _createPermitOptionPeriod = async (
-  input: CreatePermitOptionPeriodCommand,
-  context: ExecutionContext,
+export type DeletePermitOptionPeriodCommand = z.infer<typeof DeletePermitOptionPeriodCommandSchema>
+
+export const _deletePermitOptionPeriod = async (
+  input: DeletePermitOptionPeriodCommand,
+  _context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
-  // validation
-  const data = CreatePermitOptionPeriodCommandSchema.parse(input)
+  const data = DeletePermitOptionPeriodCommandSchema.parse(input)
 
-  // preperation
-  const now = new Date()
-  const id = ulid()
-
-  // execution
-  const [createdPermitOptionPeriod] = await db
-    .insert(permitOptionPeriod)
-    .values({
-      id,
-      permitOptionId: data.optionId,
-
-      validFrom: new Date(data.validFrom),
-      validTo: new Date(data.validTo),
-
-      priceCents: data.priceCents,
-      permitNumberStart: data.permitNumberStart,
-      permitNumberEnd: data.permitNumberEnd,
-
-      createdAt: now,
-      updatedAt: now,
-      createdBy: context.userId,
-      updatedBy: context.userId,
-    })
+  const [deletedPeriod] = await db
+    .delete(permitOptionPeriod)
+    .where(eq(permitOptionPeriod.id, data.periodId))
     .returning()
 
-  return createdPermitOptionPeriod
+  if (!deletedPeriod) {
+    throw new Error('Permit option period not found')
+  }
+
+  return deletedPeriod
 }, tx)
 
-export const createPermitOptionPeriod = async (
-  input: CreatePermitOptionPeriodCommand,
+export const deletePermitOptionPeriod = async (
+  input: DeletePermitOptionPeriodCommand,
   context: ExecutionContext,
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
@@ -83,5 +60,5 @@ export const createPermitOptionPeriod = async (
   }
 
   await isExecutorClubAdmin(input.clubId, context, db)
-  return _createPermitOptionPeriod(input, context, db)
+  return _deletePermitOptionPeriod(input, context, db)
 }, tx)

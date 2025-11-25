@@ -53,6 +53,9 @@ export default defineEventHandler(async () => {
 
       for (const waterData of waters) {
         const createdWater = await createWater(waterData, context, tx)
+        if (!createdWater) {
+          throw new Error(`Failed to create water: ${waterData.name}`)
+        }
         createdWaters.push(createdWater)
         await assignWaterToClub({
           clubId: club.id,
@@ -101,6 +104,9 @@ export default defineEventHandler(async () => {
             country: 'Germany',
 
           }, context, tx)
+          if (!clubMember) {
+            throw new Error(`Failed to create club member: ${member.first_name} ${member.last_name}`)
+          }
           createdClubMembers.push(clubMember)
         }
         catch (error: any) {
@@ -127,6 +133,9 @@ export default defineEventHandler(async () => {
 
             isPublic: false,
           }, context, tx)
+          if (!createdEvent) {
+            throw new Error(`Failed to create club event: ${event.title}`)
+          }
           createdClubEvents.push(createdEvent)
 
           // assign participants
@@ -194,12 +203,19 @@ export default defineEventHandler(async () => {
           name: permitData.name,
         }, context, tx)
 
+        if (!createdPermit) {
+          throw new Error(`Failed to create permit: ${permitData.name}`)
+        }
+
         // assign permit to waters
         for (const waterName of permitData.waters) {
           const water = createdWaters.find(w => w.name === waterName)
+          if (!water) {
+            throw new Error(`Water not found: ${waterName}`)
+          }
           await assignPermitToWater({
             permitId: createdPermit.id,
-            waterId: water!.id,
+            waterId: water.id,
           }, context, tx)
         }
 
@@ -207,14 +223,21 @@ export default defineEventHandler(async () => {
         for (const optionData of permitData.options) {
           // create permit option
           const createdOption = await createPermitOption({
+            clubId: club.id,
             permitId: createdPermit.id,
             name: optionData.name,
             description: optionData.description,
           }, context, tx)
 
+          if (!createdOption) {
+            throw new Error(`Failed to create permit option: ${optionData.name}`)
+          }
+
           for (const periodData of optionData.periods) {
             await createPermitOptionPeriod({
-              permitOptionId: createdOption.id,
+              clubId: club.id,
+              permitId: createdPermit.id,
+              optionId: createdOption.id,
               validFrom: periodData.validFrom,
               validTo: periodData.validTo,
               priceCents: periodData.priceCents,
