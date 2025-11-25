@@ -8,8 +8,10 @@ const { data } = getMembers(pagination)
 
 type MemberItem = NonNullable<typeof data.value>['items'][number]
 
-// Form composable for opening slideover
-const { openCreate, openEdit } = useMemberForm(computed(() => club.value?.id))
+const clubSlug = computed(() => club.value?.slug || '')
+
+const openCreate = () => navigateTo(`/verein/${clubSlug.value}/_admin/members/new`)
+const openEdit = (id: string) => navigateTo(`/verein/${clubSlug.value}/_admin/members/${id}`)
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
@@ -75,7 +77,7 @@ const columns: TableColumn<MemberItem>[] = [
   },
 ]
 
-function onRowClick(_e: Event, row: { original: MemberItem }) {
+const onRowClick = (_e: Event, row: { original: MemberItem }) => {
   openEdit(row.original.id)
 }
 </script>
@@ -105,9 +107,6 @@ function onRowClick(_e: Event, row: { original: MemberItem }) {
         <UPagination v-model:page="page" :total="data?.meta.totalItems" />
       </div>
     </div>
-
-    <!-- Member Form Slideover -->
-    <MemberFormSlideover />
   </div>
 </template>
 

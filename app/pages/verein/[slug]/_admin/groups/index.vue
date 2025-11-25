@@ -8,8 +8,10 @@ const { data } = getRoles(pagination)
 
 type RoleItem = NonNullable<typeof data.value>['items'][number]
 
-// Form composable for opening slideover
-const { openCreate, openEdit } = useRoleForm(computed(() => club.value?.id))
+const clubSlug = computed(() => club.value?.slug || '')
+
+const openCreate = () => navigateTo(`/verein/${clubSlug.value}/_admin/groups/new`)
+const openEdit = (id: string) => navigateTo(`/verein/${clubSlug.value}/_admin/groups/${id}`)
 
 const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
@@ -71,7 +73,7 @@ const columns: TableColumn<RoleItem>[] = [
   },
 ]
 
-function onRowClick(_e: Event, row: { original: RoleItem }) {
+const onRowClick = (_e: Event, row: { original: RoleItem }) => {
   openEdit(row.original.id)
 }
 </script>
@@ -101,8 +103,5 @@ function onRowClick(_e: Event, row: { original: RoleItem }) {
         <UPagination v-model:page="page" :total="data?.meta.totalItems" />
       </div>
     </div>
-
-    <!-- Role Form Slideover -->
-    <RoleFormSlideover />
   </div>
 </template>

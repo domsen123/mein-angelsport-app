@@ -28,6 +28,6 @@ export const useClubRolesByClubIdQuery = ({ clubId, pagination }: GetClubRolesBy
 export const useClubRoleByIdQuery = ({ clubId, roleId }: GetClubRoleByIdCommandInput) => defineQueryOptions({
   key: CLUB_ROLE_QUERY_KEYS.getClubRoleById({ clubId, roleId }),
   query: () => useClubRoleClient().getClubRoleById({ clubId, roleId }),
-  enabled: !!clubId && !!roleId,
+  enabled: !!clubId && !!roleId && roleId !== 'new',
   staleTime: 1000 * 60 * 20,
 })

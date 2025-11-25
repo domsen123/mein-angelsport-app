@@ -20,10 +20,7 @@ export const CLUB_MEMBER_QUERY_KEYS = {
 
 export const useClubMembersByClubIdQuery = ({ clubId, pagination }: GetClubMembersByClubIdCommandInput) => defineQueryOptions({
   key: CLUB_MEMBER_QUERY_KEYS.getClubMembersByClubId({ clubId, pagination }),
-  query: () => {
-    console.log('Fetching club members for clubId:', clubId, 'with pagination:', pagination)
-    return useClubMemberClient().getClubMembersByClubId({ clubId, pagination })
-  },
+  query: () => useClubMemberClient().getClubMembersByClubId({ clubId, pagination }),
   enabled: !!clubId,
   staleTime: 1000 * 60 * 20, // 20 minutes
 })
@@ -31,6 +28,6 @@ export const useClubMembersByClubIdQuery = ({ clubId, pagination }: GetClubMembe
 export const useClubMemberByIdQuery = ({ clubId, memberId }: GetClubMemberByIdCommandInput) => defineQueryOptions({
   key: CLUB_MEMBER_QUERY_KEYS.getClubMemberById({ clubId, memberId }),
   query: () => useClubMemberClient().getClubMemberById({ clubId, memberId }),
-  enabled: !!clubId && !!memberId,
+  enabled: !!clubId && !!memberId && memberId !== 'new',
   staleTime: 1000 * 60 * 20, // 20 minutes
 })

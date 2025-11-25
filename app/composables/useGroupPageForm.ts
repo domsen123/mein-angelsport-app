@@ -1,58 +1,56 @@
-import type { MaybeRef } from 'vue'
+import * as z from 'zod'
 import { useCreateClubRoleMutation, useUpdateClubRoleMutation } from '~/actions/clubRoles/mutations'
 import { useClubRoleByIdQuery } from '~/actions/clubRoles/queries'
 
-export interface RoleFormState {
-  name: string
-  description: string | null
-  isClubAdmin: boolean
-  isExemptFromWorkDuties: boolean
-}
+export const groupFormSchema = z.object({
+  name: z.string().min(1, 'Name ist erforderlich').max(40, 'Name darf maximal 40 Zeichen lang sein'),
+  description: z.string().max(200, 'Beschreibung darf maximal 200 Zeichen lang sein').nullish().transform(v => v || null),
+  isClubAdmin: z.boolean(),
+  isExemptFromWorkDuties: z.boolean(),
+})
 
-const defaultState = (): RoleFormState => ({
+export type GroupFormState = z.infer<typeof groupFormSchema>
+
+const defaultState = (): GroupFormState => ({
   name: '',
   description: null,
   isClubAdmin: false,
   isExemptFromWorkDuties: false,
 })
 
-export function useRoleForm(clubId: MaybeRef<string | undefined>) {
+export const useGroupPageForm = () => {
   const route = useRoute()
-  const router = useRouter()
   const toast = useToast()
+  const { club } = useClub()
 
-  // Mode detection
-  const roleId = computed(() => route.query.roleId as string | undefined)
-  const isCreateMode = computed(() => roleId.value === 'new')
-  const isEditMode = computed(() => !!roleId.value && roleId.value !== 'new')
-  const isOpen = computed(() => !!roleId.value)
+  // Mode detection via route param
+  const groupId = computed(() => route.params.groupId as string | undefined)
+  const isCreateMode = computed(() => groupId.value === 'new')
+  const isEditMode = computed(() => !!groupId.value && groupId.value !== 'new')
 
   // Form state
-  const state = reactive<RoleFormState>(defaultState())
+  const state = reactive<GroupFormState>(defaultState())
 
-  // Get clubId as ref
-  const clubIdRef = computed(() => toValue(clubId))
+  // Get clubId
+  const clubId = computed(() => club.value?.id)
+  const clubSlug = computed(() => club.value?.slug)
 
   // Fetch role data in edit mode
   const { data: roleData, isLoading: isRoleLoading } = useQuery(useClubRoleByIdQuery, () => ({
-    clubId: clubIdRef.value!,
-    roleId: roleId.value!,
+    clubId: clubId.value!,
+    roleId: groupId.value!,
   }))
 
-  // Watch role data to populate form
-  watch(roleData, (role) => {
-    if (role) {
+  // Single watcher for form population
+  watch([isCreateMode, roleData], ([isCreate, role]) => {
+    if (isCreate) {
+      Object.assign(state, defaultState())
+    }
+    else if (role) {
       state.name = role.name || ''
       state.description = role.description || null
       state.isClubAdmin = role.isClubAdmin || false
       state.isExemptFromWorkDuties = role.isExemptFromWorkDuties || false
-    }
-  }, { immediate: true })
-
-  // Reset form when switching to create mode
-  watch(isCreateMode, (isCreate) => {
-    if (isCreate) {
-      Object.assign(state, defaultState())
     }
   }, { immediate: true })
 
@@ -61,15 +59,15 @@ export function useRoleForm(clubId: MaybeRef<string | undefined>) {
   const updateMutation = useUpdateClubRoleMutation()
 
   const isLoading = computed(() =>
-    isRoleLoading.value
-    || createMutation.isLoading.value
+    createMutation.isLoading.value
     || updateMutation.isLoading.value,
   )
 
   // Submit handler
-  async function submit() {
-    const currentClubId = clubIdRef.value
-    if (!currentClubId)
+  const submit = async () => {
+    const currentClubId = clubId.value
+    const currentSlug = clubSlug.value
+    if (!currentClubId || !currentSlug)
       return
 
     try {
@@ -87,10 +85,10 @@ export function useRoleForm(clubId: MaybeRef<string | undefined>) {
           color: 'success',
         })
       }
-      else if (isEditMode.value && roleId.value) {
+      else if (isEditMode.value && groupId.value) {
         await updateMutation.mutateAsync({
           clubId: currentClubId,
-          roleId: roleId.value,
+          roleId: groupId.value,
           name: state.name,
           description: state.description,
           isClubAdmin: state.isClubAdmin,
@@ -102,39 +100,24 @@ export function useRoleForm(clubId: MaybeRef<string | undefined>) {
           color: 'success',
         })
       }
-      close()
+      // Navigate back to groups list
+      await navigateTo(`/verein/${currentSlug}/_admin/groups`)
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten.'
       toast.add({
         title: 'Fehler',
-        description: error?.message || 'Ein Fehler ist aufgetreten.',
+        description: message,
         color: 'error',
       })
     }
   }
 
-  // Close handler - remove query param
-  function close() {
-    const query = { ...route.query }
-    delete query.roleId
-    router.replace({ query })
-  }
-
-  // Open handlers
-  function openCreate() {
-    router.push({ query: { ...route.query, roleId: 'new' } })
-  }
-
-  function openEdit(id: string) {
-    router.push({ query: { ...route.query, roleId: id } })
-  }
-
   return {
     // Mode
-    roleId,
+    groupId,
     isCreateMode,
     isEditMode,
-    isOpen,
     // State
     state,
     roleData,
@@ -143,8 +126,5 @@ export function useRoleForm(clubId: MaybeRef<string | undefined>) {
     isRoleLoading,
     // Actions
     submit,
-    close,
-    openCreate,
-    openEdit,
   }
 }
