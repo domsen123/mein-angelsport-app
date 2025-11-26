@@ -25,7 +25,9 @@ const { clubSlug } = useClub()
             { icon: 'i-lucide-users', label: 'Gruppen', to: `/verein/${clubSlug}/_admin/groups` },
           ],
           [
-            { type: 'label', label: 'Rechtliches', class: [collapsed && 'hidden'] },
+            { type: 'label', label: 'Shop', class: [collapsed && 'hidden'] },
+            { icon: 'i-lucide-container', label: 'Artikel', to: `/verein/${clubSlug}/_admin/shop/items` },
+            { icon: 'i-lucide-shopping-cart', label: 'Bestellungen', to: `/verein/${clubSlug}/_admin/shop/orders` },
             { icon: 'i-lucide-book-open-check', label: 'Erlaubnisscheine', to: `/verein/${clubSlug}/_admin/permits` },
           ],
           // [

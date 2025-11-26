@@ -1,4 +1,5 @@
 export * from './auth.schema'
 export * from './club.schema'
 export * from './permit.schema'
+export * from './shop.schema'
 export * from './water.schema'

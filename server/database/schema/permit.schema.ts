@@ -83,6 +83,9 @@ export const permitInstance = pgTable('permit_instance', {
   ownerEmail: text('owner_email'),
   ownerPhone: text('owner_phone'),
 
+  // Reservierung
+  reservedBy: text('reserved_by').references(() => clubMember.id, { onDelete: 'set null' }),
+
   // Zeitpunkte
   reservedAt: timestamp('reserved_at', { mode: 'date', withTimezone: true }),
   soldAt: timestamp('sold_at', { mode: 'date', withTimezone: true }),
@@ -105,6 +108,7 @@ export const permitInstance = pgTable('permit_instance', {
   index('permit_instance__status_idx').on(t.status),
   index('permit_instance__buyer_id_idx').on(t.buyerId),
   index('permit_instance__owner_member_id_idx').on(t.ownerMemberId),
+  index('permit_instance__reserved_by_idx').on(t.reservedBy),
 ])
 
 export const clubRolePermitDiscount = pgTable('club_role_permit_discount', {
@@ -153,6 +157,7 @@ export const permitInstanceRelations = relations(permitInstance, ({ one }) => ({
   optionPeriod: one(permitOptionPeriod, { fields: [permitInstance.permitOptionPeriodId], references: [permitOptionPeriod.id] }),
   buyer: one(user, { fields: [permitInstance.buyerId], references: [user.id] }),
   ownerMember: one(clubMember, { fields: [permitInstance.ownerMemberId], references: [clubMember.id] }),
+  reservedByMember: one(clubMember, { fields: [permitInstance.reservedBy], references: [clubMember.id] }),
 }))
 
 export const clubRolePermitDiscountRelations = relations(clubRolePermitDiscount, ({ one }) => ({

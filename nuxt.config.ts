@@ -24,4 +24,13 @@ export default defineNuxtConfig({
     'nuxt-mcp-dev',
   ],
   css: ['~/assets/css/main.css'],
+  nitro: {
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      // Run expired reservations cleanup every minute
+      '* * * * *': ['shop:cleanup-reservations'],
+    },
+  },
 })

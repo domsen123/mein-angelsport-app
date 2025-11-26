@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { TableColumn } from '@nuxt/ui'
 
-const { club, clubSlug, getPermits } = useClub()
+const { clubSlug, getPermits } = useClub()
 const { pagination, searchTerm, page, sorting } = usePagination()
 
 const { data } = getPermits(pagination)

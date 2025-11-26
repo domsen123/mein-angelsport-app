@@ -12,8 +12,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
   }).parse(params))
 
   const body = await readValidatedBody(event, data =>
-    UpdateDiscountCommandSchema.omit({ clubId: true, discountId: true }).parse(data),
-  )
+    UpdateDiscountCommandSchema.omit({ clubId: true, discountId: true }).parse(data))
 
   return await updateDiscount({ clubId, discountId, ...body }, context)
 })

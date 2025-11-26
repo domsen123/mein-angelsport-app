@@ -11,9 +11,9 @@ import type {
   UpdatePermitOptionCommand,
   UpdatePermitOptionPeriodCommand,
 } from './api'
+import { CLUB_ROLE_DISCOUNT_QUERY_KEYS } from '~/actions/clubRoleDiscounts/queries'
 import { usePermitClient } from './api'
 import { PERMIT_QUERY_KEYS } from './queries'
-import { CLUB_ROLE_DISCOUNT_QUERY_KEYS } from '~/actions/clubRoleDiscounts/queries'
 
 // Permit mutations
 export function useCreatePermitMutation() {
