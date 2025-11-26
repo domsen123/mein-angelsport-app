@@ -13,7 +13,7 @@ A permit purchase system where club members can buy permits for themselves or me
 | **One order = One member** | Each order is for a single recipient (the member the permits are for) |
 | **Permit sale period** | Permits can only be purchased when `club.permitSaleStart <= today <= club.permitSaleEnd` |
 | **One option per permit** | Member can select multiple permits, but only ONE option per permit type |
-| **Work duties** | Missing work duties add fees unless member has role with `isExemptFromWorkDuties` |
+| **Work duties** | Missing work duties from **previous year** add fees unless member has role with `isExemptFromWorkDuties` |
 | **Discounts** | Applied based on recipient's roles (not buyer's), highest discount wins |
 | **Reservation** | PermitInstance reserved for 5 minutes during checkout, released if not completed |
 | **No cart** | Single-session checkout flow |
@@ -53,7 +53,7 @@ A permit purchase system where club members can buy permits for themselves or me
 | `discountCents` | integer | Total discount amount |
 | `workDutyFeeCents` | integer | Fee for missing work duties |
 | `totalCents` | integer | Final amount |
-| `shippingAddress` | jsonb | `{ street, zip, city, country }` |
+| `shippingAddress` | jsonb | `{ street, postalCode, city, country }` (derived from member at checkout) |
 | `externalRef` | varchar(255) | Link to external invoice system |
 | `notes` | text | Optional admin notes |
 | `createdAt` | timestamp | |
@@ -85,7 +85,7 @@ A permit purchase system where club members can buy permits for themselves or me
 |--------|------|-------------|
 | `reservedBy` | uuid | FK to club_members (who reserved it) |
 
-*Note: `reservedAt` and `status` columns already exist*
+*Note: `reservedAt` and `status` columns already exist. Status enum: `available`, `reserved`, `sold`, `cancelled`*
 
 ---
 
@@ -112,6 +112,30 @@ Implementation: Query max order number for current year, increment by 1.
 /verein/[slug]/shop/shipping             → Step 4: Address Confirmation
 /verein/[slug]/shop/confirm              → Step 5: Final Review & Order
 ```
+
+### Reservation Timer (Global)
+
+A countdown timer showing remaining reservation time should be **visible on Steps 2-5** (after permits are reserved in Step 1).
+
+**Starts:** After user clicks "Continue" on Step 1 and permits are successfully reserved.
+
+**Timer Calculation:** Based on `max(permitInstance.reservedAt) + 5 minutes` from the reserved instances. This ensures the timer is synced with the actual database reservation time, not client-side.
+
+**UI Component:** `ReservationTimer.vue`
+- Shows countdown: "Reservierung läuft ab in: X:XX"
+- Warning style (yellow/orange) when < 2 minutes remaining
+- Critical style (red) when < 1 minute remaining
+- When expired: Show modal "Ihre Reservierung ist abgelaufen" with button to restart (redirects to Step 1)
+
+**Placement:** Top of page or sticky header bar on Steps 2-5
+
+### Navigation Behavior
+
+- **Back Button:** Each step is a separate page. Going back navigates to previous step. Reservation remains active.
+- **Leaving Checkout:** If user navigates away from checkout flow, reservation expires naturally after 5 minutes (no warning shown).
+- **Browser Close/Tab Close:** Reservation expires after timer - no beforeunload warning.
+
+---
 
 ### State Management
 
@@ -157,18 +181,22 @@ interface CheckoutState {
 **Purpose:** Select which member to buy for and which permits/options to purchase.
 
 **UI Elements:**
-1. **Member Selector** (if user manages other members)
+1. **"Already Ordered" Notification** (if member has order in current year)
+   - Show info banner: "Sie haben bereits eine Bestellung für dieses Jahr aufgegeben"
+   - Future: Link to "My Orders" page (out of scope for now)
+
+2. **Member Selector** (if user manages other members)
    - Dropdown with self + managed members
    - Shows member name and any relevant info
 
-2. **Permit List**
+3. **Permit List**
    - Show all permits for current period
    - Each permit shows available options as radio buttons
    - Show price per option
    - Show availability count (from permit_instances)
    - Disable options with no availability
 
-3. **"Continue" Button**
+4. **"Continue" Button**
    - Validates at least one permit selected
    - Reserves selected permit instances
    - Navigates to Step 2
@@ -191,9 +219,8 @@ interface CheckoutState {
 **UI Elements:**
 1. **Work Duty Summary**
    - Required duties: `club.workDutiesPerYear`
-   - Attended duties: Count of `clubEvent.isWorkDuty` events with status `attended` for current year
-   - Missing duties: Calculated difference
-   - More duties than required equals 0 missing
+   - Attended duties: Count of `clubEvent.isWorkDuty` events with status `attended` for **previous year** (currentYear - 1)
+   - Missing duties: Calculated difference (min 0 - more duties than required equals 0 missing)
 
 2. **Fee Calculation** (if not exempt)
    - `X missing work duties × €Y = €Z`
@@ -262,8 +289,9 @@ interface CheckoutState {
    - Navigates to Step 5
 
 **Prefill Logic:**
-- Load address from `club_members` table for the selected member
-- If managed member has no address, might need to use buyer's address or require input
+- Load address from `club_members` table for the selected member (fields: `street`, `postalCode`, `city`, `country`)
+- If member has no address stored, fields are empty and user must enter manually
+- Address is always required - validation must ensure all fields are filled before proceeding
 
 ---
 
@@ -282,16 +310,12 @@ interface CheckoutState {
 2. **Shipping Address**
    - Display confirmed address
 
-3. **Reservation Timer**
-   - Show countdown: "Complete order within X:XX"
-   - Warning when < 1 minute remaining
-
-4. **"Place Order" Button**
+3. **"Place Order" Button**
    - Creates order
    - Updates permit instances to `sold`
    - Redirects to success page
 
-5. **Success Page** (`/verein/[slug]/shop/success.vue`)
+4. **Success Page** (`/verein/[slug]/shop/success.vue`)
    - Order confirmation
    - Order number
    - Summary of purchase
@@ -304,6 +328,7 @@ interface CheckoutState {
 ## Admin Pages
 
 ### Shop Items Management (`/verein/[slug]/_admin/shop/items.vue`)
+### Shop Item Management Page (`/verein/[slug]/_admin/shop/[itemId].vue`)
 
 **Purpose:** CRUD for club shop items.
 
@@ -312,7 +337,7 @@ interface CheckoutState {
    - Name, Price, Standalone, Auto-Add, Active
    - Edit/Delete actions
 
-2. **Add/Edit Modal**
+2. **Add/Edit Page**
    - Name (required)
    - Description (optional)
    - Price in cents
@@ -323,6 +348,7 @@ interface CheckoutState {
 ---
 
 ### Orders Management (`/verein/[slug]/_admin/shop/orders.vue`)
+### Order Management (`/verein/[slug]/_admin/shop/[orderId].vue`)
 
 **Purpose:** View and manage orders.
 
@@ -331,14 +357,14 @@ interface CheckoutState {
    - Order Number
    - Date
    - Member Name
-   - Buyer Name (if different)
+   - Buyer Name
    - Total
    - Status (with color badge)
    - Actions
 
 2. **Filters**
    - Status filter
-   - Date range
+   - Year filter (default: "currentYear")
    - Search by member/order number
 
 3. **Order Detail Modal/Page**
@@ -411,9 +437,10 @@ AND reservedAt < NOW() - INTERVAL '5 minutes'
 - [ ] Prevent double-submission of order
 
 ### Work Duties
-- [ ] Only count events from current year
+- [ ] Only count events from **previous year** (currentYear - 1)
 - [ ] Only count events with `isWorkDuty = true` and participation status `attended`
 - [ ] Check `isExemptFromWorkDuties` flag on member's roles
+- [ ] Missing duties = max(0, required - attended) - cannot be negative
 
 ### Discounts
 - [ ] Apply highest discount when member has multiple roles
@@ -480,3 +507,9 @@ AND reservedAt < NOW() - INTERVAL '5 minutes'
 | 2025-01-XX | Order number format? | YYYY-XXXX |
 | 2025-01-XX | Standalone items? | Out of scope for now |
 | 2025-01-XX | Email confirmations? | Out of scope for now |
+| 2025-01-XX | Work duty period? | Previous year (currentYear - 1) |
+| 2025-01-XX | Address if member has none? | Fields empty, user must enter manually |
+| 2025-01-XX | Back button during checkout? | Goes to previous step, reservation stays active |
+| 2025-01-XX | Browser/tab close? | No warning, reservation expires naturally |
+| 2025-01-XX | Discount API structure? | Developer decides during implementation |
+| 2025-01-XX | My Orders page for members? | Out of scope, but show "already ordered" notification |
