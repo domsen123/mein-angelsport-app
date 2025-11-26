@@ -1,10 +1,11 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
 import { APIError } from 'better-auth'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
-import { clubMember, permitInstance, permitOptionPeriod } from '~~/server/database/schema'
+import { club, clubMember, clubOrder, permitInstance, permitOptionPeriod } from '~~/server/database/schema'
+import { getCurrentSalePeriod } from '~~/server/utils/sale-period'
 import { isExecutorClubMember } from '../clubMember/checks/is-executor-club-member'
 
 export const ReservePermitsSchema = z.object({
@@ -44,6 +45,70 @@ export const reservePermits = async (
     if (!targetMember || targetMember.managedBy !== executorMember.id) {
       throw new APIError('FORBIDDEN', {
         message: 'Sie haben keine Berechtigung, für dieses Mitglied zu reservieren.',
+      })
+    }
+  }
+
+  // Get club settings for sale period
+  const clubData = await db.query.club.findFirst({
+    where: eq(club.id, clubId),
+    columns: {
+      permitSaleStart: true,
+      permitSaleEnd: true,
+    },
+  })
+
+  // Check for existing orders with same permit periods in current sale period
+  const requestedPeriodIds = permitRequests.map(p => p.optionPeriodId)
+
+  // Build query conditions for existing orders
+  const orderConditions = [
+    eq(clubOrder.clubId, clubId),
+    eq(clubOrder.memberId, memberId),
+    inArray(clubOrder.status, ['PENDING', 'PAID', 'FULFILLED']),
+  ]
+
+  // Add sale period filter if configured
+  const salePeriod = getCurrentSalePeriod(
+    clubData?.permitSaleStart ?? null,
+    clubData?.permitSaleEnd ?? null,
+  )
+  if (salePeriod) {
+    orderConditions.push(gte(clubOrder.createdAt, salePeriod.start))
+    orderConditions.push(lte(clubOrder.createdAt, salePeriod.end))
+  }
+
+  // Query existing orders to find owned permit periods
+  const existingOrders = await db.query.clubOrder.findMany({
+    where: and(...orderConditions),
+    with: {
+      items: {
+        with: {
+          permitInstance: {
+            columns: {
+              permitOptionPeriodId: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  // Collect owned period IDs
+  const ownedPeriodIds = new Set<string>()
+  for (const order of existingOrders) {
+    for (const item of order.items) {
+      if (item.permitInstance?.permitOptionPeriodId) {
+        ownedPeriodIds.add(item.permitInstance.permitOptionPeriodId)
+      }
+    }
+  }
+
+  // Check if any requested period is already owned
+  for (const periodId of requestedPeriodIds) {
+    if (ownedPeriodIds.has(periodId)) {
+      throw new APIError('CONFLICT', {
+        message: 'Sie haben bereits einen Erlaubnisschein für diesen Zeitraum erworben.',
       })
     }
   }

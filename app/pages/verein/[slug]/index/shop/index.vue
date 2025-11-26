@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { AvailablePermit, AvailablePermitOption, AvailablePermitPeriod } from '~~/server/actions/shop/get-available-permits'
 import { useReservePermitsMutation } from '~/actions/shop/mutations'
-import { useAvailablePermitsQuery, useSelectableMembersQuery } from '~/actions/shop/queries'
+import { useAvailablePermitsQuery, useMemberOrdersQuery, useSelectableMembersQuery } from '~/actions/shop/queries'
 
 const { club, clubSlug } = useClub()
 const router = useRouter()
@@ -22,6 +22,24 @@ const { data: permitsData, isLoading: permitsLoading } = useQuery(
 
 // Selected member
 const selectedMemberId = ref<string | undefined>(checkoutStore.state.memberId ?? undefined)
+
+// Query member's existing orders when member is selected
+const { data: memberOrdersData, isLoading: memberOrdersLoading } = useQuery(
+  useMemberOrdersQuery,
+  () => ({
+    clubId: clubId.value!,
+    memberId: selectedMemberId.value!,
+  }),
+)
+
+// Set of owned permit period IDs for duplicate checking
+const ownedPermitPeriodIds = computed(() =>
+  new Set(memberOrdersData.value?.ownedPermitPeriodIds ?? []),
+)
+
+// Check if a period is already owned by the selected member
+const isPeriodOwned = (periodId: string) =>
+  ownedPermitPeriodIds.value.has(periodId)
 
 // Track selected options per permit (permitId -> periodId)
 const selectedOptions = ref<Record<string, string>>({})
@@ -55,12 +73,32 @@ const formatPrice = (cents: number) => {
   }).format(cents / 100)
 }
 
-const formatDate = (date: Date) => {
+const formatDate = (date: Date | string) => {
   return new Intl.DateTimeFormat('de-DE', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   }).format(new Date(date))
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'PENDING': return 'Ausstehend'
+    case 'PAID': return 'Bezahlt'
+    case 'FULFILLED': return 'Abgeschlossen'
+    case 'CANCELLED': return 'Storniert'
+    default: return status
+  }
+}
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'PENDING': return 'warning'
+    case 'PAID': return 'info'
+    case 'FULFILLED': return 'success'
+    case 'CANCELLED': return 'error'
+    default: return 'neutral'
+  }
 }
 
 const toggleOption = (permitId: string, periodId: string) => {
@@ -188,6 +226,56 @@ const handleContinue = async () => {
           </USelectMenu>
         </UFormField>
 
+        <!-- Existing Orders -->
+        <div v-if="selectedMemberId && memberOrdersLoading" class="py-4">
+          <USkeleton class="h-24 w-full" />
+        </div>
+
+        <UCard v-else-if="selectedMemberId && memberOrdersData?.orders?.length" variant="subtle">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-shopping-bag" class="size-5 text-primary" />
+              <h3 class="font-semibold">
+                Bereits gekaufte Erlaubnisscheine
+              </h3>
+            </div>
+          </template>
+
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div
+              v-for="order in memberOrdersData.orders"
+              :key="order.id"
+              class="py-3 first:pt-0 last:pb-0"
+            >
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium">{{ order.orderNumber }}</span>
+                    <UBadge
+                      :color="getStatusColor(order.status)"
+                      variant="subtle"
+                      size="xs"
+                    >
+                      {{ getStatusLabel(order.status) }}
+                    </UBadge>
+                  </div>
+                  <p class="text-sm text-muted mt-1">
+                    {{ formatDate(order.createdAt) }}
+                  </p>
+                  <ul class="mt-2 text-sm text-muted">
+                    <li v-for="item in order.items.filter(i => i.itemType === 'PERMIT')" :key="item.id">
+                      • {{ item.name }}
+                    </li>
+                  </ul>
+                </div>
+                <div class="text-right font-semibold">
+                  {{ formatPrice(order.totalCents) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
         <!-- Permits List -->
         <div v-if="selectedMemberId" class="space-y-6">
           <div
@@ -228,29 +316,39 @@ const handleContinue = async () => {
                   <div
                     v-for="period in option.periods"
                     :key="period.id"
-                    class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors"
+                    class="flex items-center justify-between p-3 rounded-lg border transition-colors"
                     :class="{
-                      'border-primary-500 bg-primary-50 dark:bg-primary-900/20': isOptionSelected(permit.id, period.id),
-                      'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600': !isOptionSelected(permit.id, period.id),
-                      'opacity-50 cursor-not-allowed': period.availableCount === 0,
+                      'border-primary-500 bg-primary-50 dark:bg-primary-900/20': isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id),
+                      'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer': !isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id) && period.availableCount > 0,
+                      'opacity-50 cursor-not-allowed': period.availableCount === 0 || isPeriodOwned(period.id),
+                      'border-success-200 dark:border-success-700 bg-success-50 dark:bg-success-900/20': isPeriodOwned(period.id),
                     }"
-                    @click="period.availableCount > 0 && toggleOption(permit.id, period.id)"
+                    @click="!isPeriodOwned(period.id) && period.availableCount > 0 && toggleOption(permit.id, period.id)"
                   >
                     <div class="flex items-center gap-3">
                       <URadio
+                        v-if="!isPeriodOwned(period.id)"
                         :model-value="isOptionSelected(permit.id, period.id)"
                         :disabled="period.availableCount === 0"
+                      />
+                      <UIcon
+                        v-else
+                        name="i-lucide-check-circle"
+                        class="size-5 text-success"
                       />
                       <div>
                         <p class="text-sm">
                           {{ formatDate(period.validFrom) }} - {{ formatDate(period.validTo) }}
                         </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                        <p v-if="isPeriodOwned(period.id)" class="text-xs text-success font-medium">
+                          Bereits erworben
+                        </p>
+                        <p v-else class="text-xs text-gray-500 dark:text-gray-400">
                           {{ period.availableCount }} verfügbar
                         </p>
                       </div>
                     </div>
-                    <div class="font-semibold">
+                    <div v-if="!isPeriodOwned(period.id)" class="font-semibold">
                       {{ formatPrice(period.priceCents) }}
                     </div>
                   </div>

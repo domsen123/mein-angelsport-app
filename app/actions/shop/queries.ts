@@ -7,6 +7,12 @@ export const SHOP_QUERY_KEYS = {
     'selectable-members',
     clubId,
   ] as const,
+  memberOrders: (clubId: string, memberId: string) => [
+    ...SHOP_QUERY_KEYS.root,
+    'member-orders',
+    clubId,
+    memberId,
+  ] as const,
   availablePermits: (clubId: string) => [
     ...SHOP_QUERY_KEYS.root,
     'available-permits',
@@ -36,6 +42,11 @@ export interface WorkDutyStatusQueryInput {
 }
 
 export interface MemberDiscountsQueryInput {
+  clubId: string
+  memberId: string
+}
+
+export interface MemberOrdersQueryInput {
   clubId: string
   memberId: string
 }
@@ -73,5 +84,14 @@ export const useMemberDiscountsQuery = defineQueryOptions(
     query: () => useShopClient().getMemberDiscounts(clubId, memberId),
     enabled: !!clubId && !!memberId,
     staleTime: 1000 * 60 * 10, // 10 minutes
+  }),
+)
+
+export const useMemberOrdersQuery = defineQueryOptions(
+  ({ clubId, memberId }: MemberOrdersQueryInput) => ({
+    key: SHOP_QUERY_KEYS.memberOrders(clubId, memberId),
+    query: () => useShopClient().getMemberOrders(clubId, memberId),
+    enabled: !!clubId && !!memberId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   }),
 )

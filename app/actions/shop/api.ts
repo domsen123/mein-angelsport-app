@@ -1,6 +1,7 @@
 import type { CreateOrderResponse } from '~~/server/actions/shop/create-order'
 import type { GetAvailablePermitsResponse } from '~~/server/actions/shop/get-available-permits'
 import type { GetMemberDiscountsResponse } from '~~/server/actions/shop/get-member-discounts'
+import type { GetMemberOrdersResponse } from '~~/server/actions/shop/get-member-orders'
 import type { GetSelectableMembersResponse } from '~~/server/actions/shop/get-selectable-members'
 import type { GetWorkDutyStatusResponse } from '~~/server/actions/shop/get-work-duty-status'
 import type { ReservePermitsResponse } from '~~/server/actions/shop/reserve-permits'
@@ -11,6 +12,12 @@ export const useShopClient = () => {
   const getSelectableMembers = (clubId: string) =>
     $api<GetSelectableMembersResponse>(`/api/club/${clubId}/shop/members`, {
       method: 'GET',
+    })
+
+  const getMemberOrders = (clubId: string, memberId: string) =>
+    $api<GetMemberOrdersResponse>(`/api/club/${clubId}/shop/member-orders`, {
+      method: 'GET',
+      query: { memberId },
     })
 
   const getAvailablePermits = (clubId: string) =>
@@ -68,6 +75,7 @@ export const useShopClient = () => {
 
   return {
     getSelectableMembers,
+    getMemberOrders,
     getAvailablePermits,
     getWorkDutyStatus,
     getMemberDiscounts,
