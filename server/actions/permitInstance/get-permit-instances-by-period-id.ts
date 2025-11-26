@@ -1,6 +1,6 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import z from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { paginateQuery } from '~~/server/database/pagination'
@@ -39,14 +39,14 @@ const _getPermitInstancesByPeriodId = async (
           permitInstance.ownerEmail,
         ],
         sortableColumns: {
-          permitNumber: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
+          permitNumber: permitInstance.permitNumber,
           status: permitInstance.status,
           ownerName: permitInstance.ownerName,
           soldAt: permitInstance.soldAt,
           createdAt: permitInstance.createdAt,
         },
         defaultSort: {
-          column: sql`CAST(${permitInstance.permitNumber} AS INTEGER)`,
+          column: permitInstance.permitNumber,
           direction: 'asc',
         },
         baseFilter: eq(permitInstance.permitOptionPeriodId, data.periodId),

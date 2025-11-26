@@ -57,14 +57,13 @@ const handleBack = () => {
       <ShopReservationTimer />
 
       <!-- Header -->
-      <div>
-        <h2 class="text-xl font-semibold">
-          Arbeitsdienst-Status
-        </h2>
-        <p class="text-gray-500 dark:text-gray-400">
-          Für: {{ checkoutStore.state.memberName }}
-        </p>
-      </div>
+      <UPageCard
+        title="Arbeitsdienst-Status"
+        :description="`Für: ${checkoutStore.state.memberName}`"
+        variant="naked"
+        orientation="horizontal"
+        class="mb-4"
+      />
 
       <!-- Loading -->
       <div v-if="isLoading" class="space-y-4">
@@ -73,14 +72,14 @@ const handleBack = () => {
 
       <template v-else-if="workDutyData">
         <!-- Work Duty Summary Card -->
-        <UCard>
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-hammer" class="text-lg" />
-              <span class="font-semibold">Arbeitsdienste {{ workDutyData.previousYear }}</span>
-            </div>
-          </template>
-
+        <UPageCard
+          :title="`Arbeitsdienste ${workDutyData.previousYear}`"
+          description="Übersicht über geleistete und ausstehende Arbeitsdienste"
+          variant="naked"
+          orientation="horizontal"
+          class="mb-4"
+        />
+        <UPageCard variant="subtle">
           <div class="space-y-4">
             <!-- Summary Grid -->
             <div class="grid grid-cols-3 gap-4 text-center">
@@ -88,7 +87,7 @@ const handleBack = () => {
                 <p class="text-2xl font-bold">
                   {{ workDutyData.required }}
                 </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-muted">
                   Erforderlich
                 </p>
               </div>
@@ -96,7 +95,7 @@ const handleBack = () => {
                 <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                   {{ workDutyData.attended }}
                 </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-muted">
                   Geleistet
                 </p>
               </div>
@@ -110,7 +109,7 @@ const handleBack = () => {
                 >
                   {{ workDutyData.missing }}
                 </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-muted">
                   Fehlend
                 </p>
               </div>
@@ -149,11 +148,11 @@ const handleBack = () => {
               description="Sie haben alle erforderlichen Arbeitsdienste für das vergangene Jahr absolviert."
             />
           </div>
-        </UCard>
+        </UPageCard>
       </template>
 
       <!-- Navigation -->
-      <div class="flex justify-between">
+      <div class="flex justify-between mt-8">
         <UButton
           variant="outline"
           @click="handleBack"

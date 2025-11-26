@@ -70,7 +70,7 @@ export const permitInstance = pgTable('permit_instance', {
     .notNull(),
 
   // Eindeutige Nummer innerhalb des definierten Bereichs
-  permitNumber: text('permit_number').notNull(),
+  permitNumber: integer('permit_number').notNull(),
 
   // Status der Karte
   status: text('status', { enum: ['available', 'reserved', 'sold', 'cancelled'] }).notNull(), // 'available', 'reserved', 'sold', 'cancelled'

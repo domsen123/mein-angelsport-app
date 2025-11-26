@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { AvailablePermit, AvailablePermitOption, AvailablePermitPeriod } from '~~/server/actions/shop/get-available-permits'
 import { useReservePermitsMutation } from '~/actions/shop/mutations'
 import { useAvailablePermitsQuery, useMemberOrdersQuery, useSelectableMembersQuery } from '~/actions/shop/queries'
 
@@ -51,13 +50,6 @@ onMounted(() => {
       selectedOptions.value[permit.permitId] = permit.periodId
     }
   }
-})
-
-// Selected member display name
-const _selectedMember = computed(() => {
-  if (!selectedMemberId.value || !membersData.value)
-    return null
-  return membersData.value.members.find((m: { id: string }) => m.id === selectedMemberId.value)
 })
 
 // Check if any permits are selected
@@ -112,13 +104,6 @@ const toggleOption = (permitId: string, periodId: string) => {
 
 const isOptionSelected = (permitId: string, periodId: string) =>
   selectedOptions.value[permitId] === periodId
-
-const _getSelectedPeriod = (permit: AvailablePermit, option: AvailablePermitOption): AvailablePermitPeriod | undefined => {
-  const periodId = selectedOptions.value[permit.id]
-  if (!periodId)
-    return undefined
-  return option.periods.find(p => p.id === periodId)
-}
 
 const handleContinue = async () => {
   if (!selectedMemberId.value || !clubId.value) {
@@ -206,157 +191,183 @@ const handleContinue = async () => {
 
       <template v-else-if="permitsData?.isSaleActive">
         <!-- Member Selector -->
-        <UFormField label="Für wen möchten Sie bestellen?">
-          <USelectMenu
-            v-model="selectedMemberId"
-            :items="membersData?.members ?? []"
-            value-key="id"
-            class="w-full"
-            placeholder="Mitglied auswählen"
-          >
-            <template #item="{ item }">
-              <span>{{ item.firstName }} {{ item.lastName }}</span>
-              <UBadge v-if="item.isSelf" variant="subtle" color="primary" class="ml-2">
-                Ich selbst
-              </UBadge>
-            </template>
-            <template #leading>
-              <UIcon name="i-lucide-user" />
-            </template>
-          </USelectMenu>
-        </UFormField>
+        <UPageCard
+          title="Mitglied auswählen"
+          description="Für wen möchten Sie bestellen?"
+          variant="naked"
+          orientation="horizontal"
+          class="mb-4"
+        />
+        <UPageCard variant="subtle">
+          <UFormField name="member" label="Mitglied" class="grid md:grid-cols-2 gap-4">
+            <USelectMenu
+              v-model="selectedMemberId"
+              :items="membersData?.members ?? []"
+              value-key="id"
+              class="w-full"
+              placeholder="Mitglied auswählen"
+            >
+              <template #item="{ item }">
+                <span>{{ item.firstName }} {{ item.lastName }}</span>
+                <UBadge v-if="item.isSelf" variant="subtle" color="primary" class="ml-2">
+                  Ich selbst
+                </UBadge>
+              </template>
+              <template #leading>
+                <UIcon name="i-lucide-user" />
+              </template>
+            </USelectMenu>
+          </UFormField>
+        </UPageCard>
 
         <!-- Existing Orders -->
         <div v-if="selectedMemberId && memberOrdersLoading" class="py-4">
           <USkeleton class="h-24 w-full" />
         </div>
 
-        <UCard v-else-if="selectedMemberId && memberOrdersData?.orders?.length" variant="subtle">
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-shopping-bag" class="size-5 text-primary" />
-              <h3 class="font-semibold">
-                Bereits gekaufte Erlaubnisscheine
-              </h3>
-            </div>
-          </template>
-
-          <div class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div
-              v-for="order in memberOrdersData.orders"
-              :key="order.id"
-              class="py-3 first:pt-0 last:pb-0"
-            >
-              <div class="flex items-start justify-between">
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ order.orderNumber }}</span>
-                    <UBadge
-                      :color="getStatusColor(order.status)"
-                      variant="subtle"
-                      size="xs"
-                    >
-                      {{ getStatusLabel(order.status) }}
-                    </UBadge>
-                  </div>
-                  <p class="text-sm text-muted mt-1">
-                    {{ formatDate(order.createdAt) }}
-                  </p>
-                  <ul class="mt-2 text-sm text-muted">
-                    <li v-for="item in order.items.filter(i => i.itemType === 'PERMIT')" :key="item.id">
-                      • {{ item.name }}
-                    </li>
-                  </ul>
-                </div>
-                <div class="text-right font-semibold">
-                  {{ formatPrice(order.totalCents) }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
-        <!-- Permits List -->
-        <div v-if="selectedMemberId" class="space-y-6">
-          <div
-            v-for="permit in permitsData?.permits"
-            :key="permit.id"
-            class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
-          >
-            <!-- Permit Header -->
-            <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3">
-              <h3 class="font-semibold text-lg">
-                {{ permit.name }}
-              </h3>
-              <p v-if="permit.waters.length" class="text-sm text-gray-500 dark:text-gray-400">
-                Gültig für: {{ permit.waters.map(w => w.name).join(', ') }}
-              </p>
-            </div>
-
-            <!-- Options -->
+        <template v-else-if="selectedMemberId && memberOrdersData?.orders?.length">
+          <UPageCard
+            title="Bereits gekaufte Erlaubnisscheine"
+            description="Übersicht über vorhandene Bestellungen"
+            variant="naked"
+            orientation="horizontal"
+            class="mt-8 mb-4"
+          />
+          <UPageCard variant="subtle">
             <div class="divide-y divide-gray-200 dark:divide-gray-700">
               <div
-                v-for="option in permit.options"
-                :key="option.id"
-                class="px-4 py-3"
+                v-for="order in memberOrdersData.orders"
+                :key="order.id"
+                class="py-3 first:pt-0 last:pb-0"
               >
                 <div class="flex items-start justify-between">
                   <div>
-                    <h4 class="font-medium">
-                      {{ option.name || 'Standard' }}
-                    </h4>
-                    <p v-if="option.description" class="text-sm text-gray-500 dark:text-gray-400">
-                      {{ option.description }}
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium">{{ order.orderNumber }}</span>
+                      <UBadge
+                        :color="getStatusColor(order.status)"
+                        variant="subtle"
+                        size="xs"
+                      >
+                        {{ getStatusLabel(order.status) }}
+                      </UBadge>
+                    </div>
+                    <p class="text-sm text-muted mt-1">
+                      {{ formatDate(order.createdAt) }}
                     </p>
+                    <ul class="mt-2 text-sm text-muted">
+                      <li v-for="item in order.items.filter(i => i.itemType === 'PERMIT')" :key="item.id">
+                        {{ item.name }}
+                      </li>
+                    </ul>
                   </div>
-                </div>
-
-                <!-- Periods -->
-                <div class="mt-3 space-y-2">
-                  <div
-                    v-for="period in option.periods"
-                    :key="period.id"
-                    class="flex items-center justify-between p-3 rounded-lg border transition-colors"
-                    :class="{
-                      'border-primary-500 bg-primary-50 dark:bg-primary-900/20': isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id),
-                      'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer': !isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id) && period.availableCount > 0,
-                      'opacity-50 cursor-not-allowed': period.availableCount === 0 || isPeriodOwned(period.id),
-                      'border-success-200 dark:border-success-700 bg-success-50 dark:bg-success-900/20': isPeriodOwned(period.id),
-                    }"
-                    @click="!isPeriodOwned(period.id) && period.availableCount > 0 && toggleOption(permit.id, period.id)"
-                  >
-                    <div class="flex items-center gap-3">
-                      <URadio
-                        v-if="!isPeriodOwned(period.id)"
-                        :model-value="isOptionSelected(permit.id, period.id)"
-                        :disabled="period.availableCount === 0"
-                      />
-                      <UIcon
-                        v-else
-                        name="i-lucide-check-circle"
-                        class="size-5 text-success"
-                      />
-                      <div>
-                        <p class="text-sm">
-                          {{ formatDate(period.validFrom) }} - {{ formatDate(period.validTo) }}
-                        </p>
-                        <p v-if="isPeriodOwned(period.id)" class="text-xs text-success font-medium">
-                          Bereits erworben
-                        </p>
-                        <p v-else class="text-xs text-gray-500 dark:text-gray-400">
-                          {{ period.availableCount }} verfügbar
-                        </p>
-                      </div>
-                    </div>
-                    <div v-if="!isPeriodOwned(period.id)" class="font-semibold">
-                      {{ formatPrice(period.priceCents) }}
-                    </div>
+                  <div class="text-right font-semibold">
+                    {{ formatPrice(order.totalCents) }}
                   </div>
                 </div>
               </div>
             </div>
+          </UPageCard>
+        </template>
+
+        <!-- Permits List -->
+        <template v-if="selectedMemberId">
+          <UPageCard
+            title="Verfügbare Erlaubnisscheine"
+            description="Wählen Sie die gewünschten Erlaubnisscheine aus"
+            variant="naked"
+            orientation="horizontal"
+            class="mt-8 mb-4"
+          />
+          <div class="space-y-4">
+            <UPageCard
+              v-for="permit in permitsData?.permits"
+              :key="permit.id"
+              variant="subtle"
+            >
+              <!-- Permit Header -->
+              <div class="mb-4">
+                <h3 class="font-semibold text-lg">
+                  {{ permit.name }}
+                </h3>
+                <p v-if="permit.waters.length" class="text-sm text-muted">
+                  Gültig für: {{ permit.waters.map(w => w.name).join(', ') }}
+                </p>
+              </div>
+
+              <!-- Options -->
+              <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                <div
+                  v-for="option in permit.options"
+                  :key="option.id"
+                  class="py-3 first:pt-0"
+                >
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <h4 class="font-medium">
+                        {{ option.name || 'Standard' }}
+                      </h4>
+                      <p v-if="option.description" class="text-sm text-muted">
+                        {{ option.description }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Periods -->
+                  <div class="mt-3 space-y-2">
+                    <div
+                      v-for="period in option.periods"
+                      :key="period.id"
+                      class="flex items-center justify-between p-3 rounded-lg border transition-colors"
+                      :class="{
+                        'border-primary-500 bg-primary-50 dark:bg-primary-900/20': isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id),
+                        'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer': !isOptionSelected(permit.id, period.id) && !isPeriodOwned(period.id) && period.availableCount > 0,
+                        'opacity-50 cursor-not-allowed': period.availableCount === 0 || isPeriodOwned(period.id),
+                        'border-success-200 dark:border-success-700 bg-success-50 dark:bg-success-900/20': isPeriodOwned(period.id),
+                      }"
+                      @click="!isPeriodOwned(period.id) && period.availableCount > 0 && toggleOption(permit.id, period.id)"
+                    >
+                      <div class="flex items-center gap-3">
+                        <template v-if="!isPeriodOwned(period.id)">
+                          <UIcon
+                            v-if="isOptionSelected(permit.id, period.id)"
+                            name="i-lucide-circle-check"
+                            class="size-5 text-primary"
+                          />
+                          <UIcon
+                            v-else
+                            name="i-lucide-circle"
+                            class="size-5"
+                            :class="period.availableCount === 0 ? 'text-muted' : 'text-gray-400'"
+                          />
+                        </template>
+                        <UIcon
+                          v-else
+                          name="i-lucide-check-circle"
+                          class="size-5 text-success"
+                        />
+                        <div>
+                          <p class="text-sm">
+                            {{ formatDate(period.validFrom) }} - {{ formatDate(period.validTo) }}
+                          </p>
+                          <p v-if="isPeriodOwned(period.id)" class="text-xs text-success font-medium">
+                            Bereits erworben
+                          </p>
+                          <p v-else class="text-xs text-muted">
+                            {{ period.availableCount }} verfügbar
+                          </p>
+                        </div>
+                      </div>
+                      <div v-if="!isPeriodOwned(period.id)" class="font-semibold">
+                        {{ formatPrice(period.priceCents) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UPageCard>
           </div>
-        </div>
+        </template>
 
         <!-- Continue Button -->
         <div v-if="selectedMemberId" class="flex justify-end">

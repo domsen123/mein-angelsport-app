@@ -117,24 +117,23 @@ const handleBack = () => {
       <ShopReservationTimer />
 
       <!-- Header -->
-      <div>
-        <h2 class="text-xl font-semibold">
-          Bestellung bestätigen
-        </h2>
-        <p class="text-gray-500 dark:text-gray-400">
-          Für: {{ checkoutStore.state.memberName }}
-        </p>
-      </div>
+      <UPageCard
+        title="Bestellung bestätigen"
+        :description="`Für: ${checkoutStore.state.memberName}`"
+        variant="naked"
+        orientation="horizontal"
+        class="mb-4"
+      />
 
       <!-- Order Summary -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-file-text" class="text-lg" />
-            <span class="font-semibold">Erlaubnisscheine</span>
-          </div>
-        </template>
-
+      <UPageCard
+        title="Erlaubnisscheine"
+        description="Ausgewählte Erlaubnisscheine und Preise"
+        variant="naked"
+        orientation="horizontal"
+        class="mb-4"
+      />
+      <UPageCard variant="subtle">
         <div class="divide-y divide-gray-200 dark:divide-gray-700">
           <div
             v-for="item in itemsWithPrices"
@@ -146,7 +145,7 @@ const handleBack = () => {
                 <p class="font-medium">
                   {{ item.permitName }}
                 </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-muted">
                   {{ item.optionName }}
                 </p>
               </div>
@@ -164,47 +163,56 @@ const handleBack = () => {
             </div>
           </div>
         </div>
-      </UCard>
+      </UPageCard>
 
       <!-- Work Duty Fee Section -->
-      <UCard v-if="checkoutStore.workDutyFeeCents > 0">
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-hammer" class="text-lg" />
-            <span class="font-semibold">Arbeitsdienst-Ausgleich</span>
+      <template v-if="checkoutStore.workDutyFeeCents > 0">
+        <UPageCard
+          title="Arbeitsdienst-Ausgleich"
+          description="Gebühr für nicht geleistete Arbeitsdienste"
+          variant="naked"
+          orientation="horizontal"
+          class="mt-8 mb-4"
+        />
+        <UPageCard variant="subtle">
+          <div class="flex justify-between items-center">
+            <p class="text-muted">
+              {{ checkoutStore.state.workDutyInfo?.missing }} fehlende Arbeitsdienste
+            </p>
+            <p class="font-semibold">
+              {{ formatPrice(checkoutStore.workDutyFeeCents) }}
+            </p>
           </div>
-        </template>
-
-        <div class="flex justify-between items-center">
-          <p class="text-gray-600 dark:text-gray-300">
-            {{ checkoutStore.state.workDutyInfo?.missing }} fehlende Arbeitsdienste
-          </p>
-          <p class="font-semibold">
-            {{ formatPrice(checkoutStore.workDutyFeeCents) }}
-          </p>
-        </div>
-      </UCard>
+        </UPageCard>
+      </template>
 
       <!-- Shipping Address -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-map-pin" class="text-lg" />
-            <span class="font-semibold">Lieferadresse</span>
-          </div>
-        </template>
-
-        <div class="text-gray-600 dark:text-gray-300">
+      <UPageCard
+        title="Lieferadresse"
+        description="Adresse für den Versand"
+        variant="naked"
+        orientation="horizontal"
+        class="mt-8 mb-4"
+      />
+      <UPageCard variant="subtle">
+        <div class="text-muted">
           <p>{{ checkoutStore.state.shippingAddress?.street }}</p>
           <p>{{ checkoutStore.state.shippingAddress?.postalCode }} {{ checkoutStore.state.shippingAddress?.city }}</p>
           <p>{{ checkoutStore.state.shippingAddress?.country }}</p>
         </div>
-      </UCard>
+      </UPageCard>
 
       <!-- Totals Section -->
-      <UCard>
+      <UPageCard
+        title="Zusammenfassung"
+        description="Gesamtübersicht der Kosten"
+        variant="naked"
+        orientation="horizontal"
+        class="mt-8 mb-4"
+      />
+      <UPageCard variant="subtle">
         <div class="space-y-2">
-          <div class="flex justify-between text-gray-600 dark:text-gray-300">
+          <div class="flex justify-between text-muted">
             <span>Zwischensumme</span>
             <span>{{ formatPrice(checkoutStore.subtotalCents) }}</span>
           </div>
@@ -212,7 +220,7 @@ const handleBack = () => {
             <span>Rabatte</span>
             <span>-{{ formatPrice(checkoutStore.totalDiscountCents) }}</span>
           </div>
-          <div v-if="checkoutStore.workDutyFeeCents > 0" class="flex justify-between text-gray-600 dark:text-gray-300">
+          <div v-if="checkoutStore.workDutyFeeCents > 0" class="flex justify-between text-muted">
             <span>Arbeitsdienst-Ausgleich</span>
             <span>{{ formatPrice(checkoutStore.workDutyFeeCents) }}</span>
           </div>
@@ -223,7 +231,7 @@ const handleBack = () => {
             </div>
           </div>
         </div>
-      </UCard>
+      </UPageCard>
 
       <!-- Payment Notice -->
       <UAlert
@@ -231,10 +239,11 @@ const handleBack = () => {
         icon="i-lucide-info"
         title="Zahlungshinweis"
         description="Die Zahlung erfolgt per Rechnung. Sie erhalten die Rechnung nach Bestellbestätigung per E-Mail."
+        class="mt-4"
       />
 
       <!-- Navigation -->
-      <div class="flex justify-between">
+      <div class="flex justify-between mt-8">
         <UButton
           variant="outline"
           @click="handleBack"

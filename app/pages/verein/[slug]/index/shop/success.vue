@@ -13,58 +13,56 @@ const { clubSlug } = useClub()
       </div>
 
       <!-- Success Message -->
-      <div class="space-y-2">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Bestellung erfolgreich!
-        </h2>
-        <p class="text-gray-600 dark:text-gray-300">
-          Vielen Dank für Ihre Bestellung. Sie erhalten in Kürze eine Bestätigung per E-Mail.
-        </p>
-      </div>
+      <UPageCard
+        title="Bestellung erfolgreich!"
+        description="Vielen Dank für Ihre Bestellung. Sie erhalten in Kürze eine Bestätigung per E-Mail."
+        variant="naked"
+        class="text-center"
+      />
 
       <!-- Info Cards -->
       <div class="space-y-4 text-left">
-        <UCard>
+        <UPageCard variant="subtle">
           <div class="flex items-start gap-3">
-            <UIcon name="i-lucide-mail" class="w-5 h-5 text-primary-500 mt-0.5" />
+            <UIcon name="i-lucide-mail" class="w-5 h-5 text-primary mt-0.5" />
             <div>
               <p class="font-medium">
                 E-Mail-Bestätigung
               </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm text-muted">
                 Eine Bestellbestätigung wurde an Ihre E-Mail-Adresse gesendet.
               </p>
             </div>
           </div>
-        </UCard>
+        </UPageCard>
 
-        <UCard>
+        <UPageCard variant="subtle">
           <div class="flex items-start gap-3">
-            <UIcon name="i-lucide-file-text" class="w-5 h-5 text-primary-500 mt-0.5" />
+            <UIcon name="i-lucide-file-text" class="w-5 h-5 text-primary mt-0.5" />
             <div>
               <p class="font-medium">
                 Rechnung
               </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm text-muted">
                 Die Rechnung wird Ihnen separat zugestellt. Bitte überweisen Sie den Betrag innerhalb von 14 Tagen.
               </p>
             </div>
           </div>
-        </UCard>
+        </UPageCard>
 
-        <UCard>
+        <UPageCard variant="subtle">
           <div class="flex items-start gap-3">
-            <UIcon name="i-lucide-package" class="w-5 h-5 text-primary-500 mt-0.5" />
+            <UIcon name="i-lucide-package" class="w-5 h-5 text-primary mt-0.5" />
             <div>
               <p class="font-medium">
                 Versand
               </p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm text-muted">
                 Nach Zahlungseingang werden Ihre Erlaubnisscheine an die angegebene Adresse versendet.
               </p>
             </div>
           </div>
-        </UCard>
+        </UPageCard>
       </div>
 
       <!-- Actions -->

@@ -191,6 +191,7 @@ export const reservePermits = async (
               SELECT id FROM permit_instance
               WHERE permit_option_period_id = ${req.optionPeriodId}
               AND status = 'available'
+              ORDER BY permit_number ASC
               LIMIT 1
               FOR UPDATE SKIP LOCKED
             )`,

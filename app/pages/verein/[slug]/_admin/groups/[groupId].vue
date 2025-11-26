@@ -141,7 +141,7 @@ const pageDescription = computed(() => {
         orientation="horizontal"
         class="mt-8 mb-4"
       />
-      <ClubRoleDiscountSection :club-id="clubId" :role-id="groupId" />
+      <RoleDiscountSection :club-id="clubId" :role-id="groupId" />
     </template>
 
     <UPageCard

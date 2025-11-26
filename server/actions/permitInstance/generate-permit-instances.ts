@@ -34,7 +34,7 @@ export const _generatePermitInstances = async (
     instanceValues.push({
       id: ulid(),
       permitOptionPeriodId: periodId,
-      permitNumber: String(num),
+      permitNumber: num,
       status: 'available',
       createdAt: now,
       updatedAt: now,

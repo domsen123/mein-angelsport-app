@@ -90,24 +90,23 @@ const handleBack = () => {
       <ShopReservationTimer />
 
       <!-- Header -->
-      <div>
-        <h2 class="text-xl font-semibold">
-          Lieferadresse
-        </h2>
-        <p class="text-gray-500 dark:text-gray-400">
-          Für: {{ checkoutStore.state.memberName }}
-        </p>
-      </div>
+      <UPageCard
+        title="Lieferadresse"
+        :description="`Für: ${checkoutStore.state.memberName}`"
+        variant="naked"
+        orientation="horizontal"
+        class="mb-4"
+      />
 
       <!-- Address Form -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-map-pin" class="text-lg" />
-            <span class="font-semibold">Versandadresse</span>
-          </div>
-        </template>
-
+      <UPageCard
+        title="Versandadresse"
+        description="Adresse für den Versand der Erlaubnisscheine"
+        variant="naked"
+        orientation="horizontal"
+        class="mb-4"
+      />
+      <UPageCard variant="subtle">
         <UForm :state="formState" class="space-y-4">
           <UFormField label="Straße und Hausnummer" name="street">
             <UInput
@@ -135,7 +134,7 @@ const handleBack = () => {
             </UFormField>
           </div>
 
-          <UFormField label="Land" name="country">
+          <UFormField label="Land" name="country" class="hidden">
             <UInput
               v-model="formState.country"
               placeholder="Deutschland"
@@ -144,10 +143,10 @@ const handleBack = () => {
             />
           </UFormField>
         </UForm>
-      </UCard>
+      </UPageCard>
 
       <!-- Navigation -->
-      <div class="flex justify-between">
+      <div class="flex justify-between mt-8">
         <UButton
           variant="outline"
           @click="handleBack"

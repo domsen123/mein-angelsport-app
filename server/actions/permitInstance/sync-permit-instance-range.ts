@@ -43,10 +43,7 @@ export const _syncPermitInstanceRange = async (
   // Build a map of existing permit numbers to their instance data
   const existingMap = new Map<number, { id: string, status: string }>()
   for (const instance of existingInstances) {
-    const num = Number.parseInt(instance.permitNumber, 10)
-    if (!Number.isNaN(num)) {
-      existingMap.set(num, { id: instance.id, status: instance.status })
-    }
+    existingMap.set(instance.permitNumber, { id: instance.id, status: instance.status })
   }
 
   // Calculate the new range as a set
@@ -86,7 +83,7 @@ export const _syncPermitInstanceRange = async (
     const newInstances: (typeof permitInstance.$inferInsert)[] = numbersToAdd.map(num => ({
       id: ulid(),
       permitOptionPeriodId: periodId,
-      permitNumber: String(num),
+      permitNumber: num,
       status: 'available' as const,
       createdAt: now,
       updatedAt: now,

@@ -11,6 +11,7 @@ export default defineTask({
     description: 'Clean up expired permit reservations',
   },
   async run() {
+    console.log('[shop:cleanup-reservations] Starting cleanup task')
     const db = getDatabase()
 
     // Clear reservations where reservedAt + 5 minutes < now
