@@ -256,6 +256,25 @@ const pageDescription = computed(() => {
       </UFormField>
     </UPageCard>
 
+    <!-- Managed By -->
+    <UPageCard
+      title="Verwaltung"
+      description="Mitglied, das dieses Mitglied verwaltet"
+      variant="naked"
+      orientation="horizontal"
+      class="mt-8 mb-4"
+    />
+    <UPageCard variant="subtle">
+      <UFormField
+        name="managedBy"
+        label="Verwaltet von"
+        description="Wähle ein Mitglied mit Account, das dieses Mitglied verwaltet (z.B. Elternteil)"
+        class="grid md:grid-cols-2 gap-4"
+      >
+        <ClubMemberSelect v-model="state.managedBy" class="w-full" />
+      </UFormField>
+    </UPageCard>
+
     <!-- Roles Section (edit mode only) -->
     <template v-if="isEditMode && memberId && memberId !== 'new' && club?.id && memberData?.roles">
       <UPageCard

@@ -29,6 +29,7 @@ export const clubMember = pgTable('club_member', {
 
   clubId: text('club_id').references(() => club.id, { onDelete: 'cascade' }).notNull(),
   userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+  managedBy: text('managed_by'),
 
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -130,6 +131,8 @@ export const clubRoleRelation = relations(clubRole, ({ many, one }) => ({
 export const clubMemberRelations = relations(clubMember, ({ one, many }) => ({
   club: one(club, { fields: [clubMember.clubId], references: [club.id] }),
   user: one(user, { fields: [clubMember.userId], references: [user.id] }),
+  managedByMember: one(clubMember, { fields: [clubMember.managedBy], references: [clubMember.id], relationName: 'managedByMember' }),
+  managedMembers: many(clubMember, { relationName: 'managedByMember' }),
   roles: many(clubMemberRole),
 }))
 

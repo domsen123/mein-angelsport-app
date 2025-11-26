@@ -9,6 +9,7 @@ import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 export const CreateInitalClubMemberCommandSchema = z.object({
   clubId: ulidSchema,
   userId: ulidSchema.optional(),
+  managedBy: ulidSchema.optional().nullable(),
 
   firstName: z.string().min(1).max(30),
   lastName: z.string().min(1).max(30),
@@ -39,6 +40,7 @@ export const _createClubMember = async (
       id: ulid(),
       clubId: data.clubId,
       userId: data.userId || null,
+      managedBy: data.managedBy || null,
 
       firstName: data.firstName,
       lastName: data.lastName,

@@ -1,15 +1,20 @@
-<script lang="ts" setup generic="T extends boolean">
-// This component is heavy WIP
-
+<script lang="ts" setup>
 interface MemberSelectProps {
-  modelValue: T extends true ? string[] | undefined : string | undefined
-  multiple?: T
+  modelValue: string | string[] | null | undefined
+  multiple?: boolean
+  onlyWithAccount?: boolean
 }
 
 const props = defineProps<MemberSelectProps>()
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits<{
+  'update:modelValue': [value: string | string[] | undefined]
+}>()
 
-const { modelValue } = useVModels(props, emit)
+// Convert null to undefined for internal use
+const internalValue = computed({
+  get: () => props.modelValue ?? undefined,
+  set: value => emit('update:modelValue', value),
+})
 
 const { getMembers } = useClub()
 
@@ -21,6 +26,7 @@ const { data } = getMembers(computed(() => ({
   pageSize: 99,
   searchTerm: searchTermDebounced.value || undefined,
   orderBy: ['firstName'],
+  onlyWithAccount: props.onlyWithAccount || undefined,
 })))
 
 const items = computed(() => (data.value?.items || []).map(m => ({
@@ -32,8 +38,10 @@ const items = computed(() => (data.value?.items || []).map(m => ({
 <template>
   <USelectMenu
     v-model:search-term="searchTerm"
-    v-model="modelValue"
-    :items="items" value-key="value" label-key="label"
+    v-model="internalValue"
+    :items="items"
+    value-key="value"
+    label-key="label"
     :multiple="multiple"
   />
 </template>

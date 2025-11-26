@@ -14,6 +14,7 @@ export const memberFormSchema = z.object({
   city: z.string().min(2, 'Stadt muss mindestens 2 Zeichen haben').max(50).nullish().or(z.literal('')),
   country: z.string().min(2).max(50).nullish(),
   preferredInvoicingMethod: z.enum(['email', 'postal_mail']).default('email'),
+  managedBy: z.string().nullish(),
 })
 
 export interface MemberFormState {
@@ -27,6 +28,7 @@ export interface MemberFormState {
   city: string | null
   country: string | null
   preferredInvoicingMethod: 'email' | 'postal_mail'
+  managedBy: string | null
 }
 
 const defaultState = (): MemberFormState => ({
@@ -40,6 +42,7 @@ const defaultState = (): MemberFormState => ({
   city: null,
   country: 'Germany',
   preferredInvoicingMethod: 'email',
+  managedBy: null,
 })
 
 export const useMemberPageForm = () => {
@@ -81,6 +84,7 @@ export const useMemberPageForm = () => {
       state.city = member.city || null
       state.country = member.country || 'Germany'
       state.preferredInvoicingMethod = member.preferredInvoicingMethod || 'email'
+      state.managedBy = member.managedBy || null
     }
   }, { immediate: true })
 

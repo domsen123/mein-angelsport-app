@@ -9,6 +9,7 @@ export const CLUB_MEMBER_QUERY_KEYS = {
     'by-club-id',
     args.clubId,
     JSON.stringify(args.pagination),
+    args.onlyWithAccount ? 'with-account' : 'all',
   ] as const,
   getClubMemberById: (args: GetClubMemberByIdCommandInput) => [
     ...CLUB_MEMBER_QUERY_KEYS.root,
@@ -18,9 +19,9 @@ export const CLUB_MEMBER_QUERY_KEYS = {
   ] as const,
 }
 
-export const useClubMembersByClubIdQuery = ({ clubId, pagination }: GetClubMembersByClubIdCommandInput) => defineQueryOptions({
-  key: CLUB_MEMBER_QUERY_KEYS.getClubMembersByClubId({ clubId, pagination }),
-  query: () => useClubMemberClient().getClubMembersByClubId({ clubId, pagination }),
+export const useClubMembersByClubIdQuery = ({ clubId, pagination, onlyWithAccount }: GetClubMembersByClubIdCommandInput) => defineQueryOptions({
+  key: CLUB_MEMBER_QUERY_KEYS.getClubMembersByClubId({ clubId, pagination, onlyWithAccount }),
+  query: () => useClubMemberClient().getClubMembersByClubId({ clubId, pagination, onlyWithAccount }),
   enabled: !!clubId,
   staleTime: 1000 * 60 * 20, // 20 minutes
 })

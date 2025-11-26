@@ -1,6 +1,6 @@
 import type { DatabaseClient } from '~~/server/database/client'
 import type { ExecutionContext } from '~~/server/types/ExecutionContext'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { doDatabaseOperation } from '~~/server/database/helper'
 import { paginateQuery } from '~~/server/database/pagination'
@@ -10,6 +10,7 @@ import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 export const GetClubMembersByClubIdCommandSchema = z.object({
   clubId: ulidSchema,
   pagination: paginationSchema,
+  onlyWithAccount: z.boolean().optional(),
 })
 
 export type GetClubMembersByClubIdCommandInput = z.infer<typeof GetClubMembersByClubIdCommandSchema>
@@ -20,7 +21,11 @@ export const _getClubMembersByClubId = async (
   tx?: DatabaseClient,
 ) => doDatabaseOperation(async (db) => {
   const data = GetClubMembersByClubIdCommandSchema.parse(input)
-  const { clubId, pagination } = data
+  const { clubId, pagination, onlyWithAccount } = data
+
+  const baseFilter = onlyWithAccount
+    ? and(eq(clubMember.clubId, clubId), isNotNull(clubMember.userId))
+    : eq(clubMember.clubId, clubId)
 
   const result = await paginateQuery(db, clubMember, 'clubMember', pagination, {
     searchableColumns: [clubMember.firstName, clubMember.lastName, clubMember.email],
@@ -30,7 +35,7 @@ export const _getClubMembersByClubId = async (
       email: clubMember.email,
       createdAt: clubMember.createdAt,
     },
-    baseFilter: eq(clubMember.clubId, clubId),
+    baseFilter,
     defaultSort: { column: clubMember.createdAt, direction: 'asc' },
     with: {
       user: {

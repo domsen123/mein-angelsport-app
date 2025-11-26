@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { getClubMembersByClubId } from '~~/server/actions/clubMember/get-club-members-by-club-id'
 import { createExecutionContext } from '~~/server/types/ExecutionContext'
 
+const querySchema = paginationSchema.extend({
+  onlyWithAccount: z.coerce.boolean().optional(),
+})
+
 export default defineAuthenticatedEventHandler(async (event) => {
   const context = createExecutionContext(event)
 
@@ -10,10 +14,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
     id: ulidSchema,
   }).parse(params))
 
-  const pagination = await getValidatedQuery(event, query => paginationSchema.parse(query))
+  const query = await getValidatedQuery(event, q => querySchema.parse(q))
 
   try {
-    return await getClubMembersByClubId({ clubId, pagination }, context)
+    return await getClubMembersByClubId({
+      clubId,
+      pagination: query,
+      onlyWithAccount: query.onlyWithAccount,
+    }, context)
   }
   catch (error: any) {
     if (error instanceof APIError) {

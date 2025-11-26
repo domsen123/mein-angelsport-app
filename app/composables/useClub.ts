@@ -23,9 +23,10 @@ export const useClub = () => {
     pagination: pagination.value,
   }))
 
-  const getMembers = (pagination: ClientPaginationParams['pagination']) => useQuery(useClubMembersByClubIdQuery, () => ({
+  const getMembers = (params: ComputedRef<ClientPaginationParams['pagination']['value'] & { onlyWithAccount?: boolean }>) => useQuery(useClubMembersByClubIdQuery, () => ({
     clubId: club.value!.id,
-    pagination: pagination.value,
+    pagination: params.value,
+    onlyWithAccount: params.value.onlyWithAccount,
   }))
 
   const getPermits = (pagination: ClientPaginationParams['pagination']) => useQuery(usePermitsByClubIdQuery, () => ({

@@ -6,10 +6,11 @@ import type { UpdateClubMemberCommand } from '~~/server/actions/clubMember/updat
 export const useClubMemberClient = () => {
   const { $api } = useNuxtApp()
 
-  const getClubMembersByClubId = ({ clubId, pagination }: GetClubMembersByClubIdCommandInput) => $api(`/api/club/${clubId}/_admin/members`, {
+  const getClubMembersByClubId = ({ clubId, pagination, onlyWithAccount }: GetClubMembersByClubIdCommandInput) => $api(`/api/club/${clubId}/_admin/members`, {
     method: 'GET',
     query: {
       ...pagination,
+      onlyWithAccount,
     },
   })
 

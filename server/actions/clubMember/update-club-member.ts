@@ -9,6 +9,7 @@ import { isExecutorClubAdmin } from '../clubRole/checks/is-executor-club-admin'
 export const UpdateClubMemberCommandSchema = z.object({
   clubId: ulidSchema,
   memberId: ulidSchema,
+  managedBy: ulidSchema.optional().nullable(),
 
   firstName: z.string().min(1).max(30),
   lastName: z.string().min(1).max(30),
@@ -36,6 +37,8 @@ export const _updateClubMember = async (
   const [updatedMember] = await db
     .update(clubMember)
     .set({
+      managedBy: data.managedBy || null,
+
       firstName: data.firstName,
       lastName: data.lastName,
       birthdate: data.birthdate || null,
