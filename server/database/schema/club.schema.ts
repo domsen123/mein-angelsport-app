@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { boolean, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { user } from './auth.schema'
+import { clubRolePermitDiscount } from './permit.schema'
 
 export const club = pgTable('club', {
   id: text('id').primaryKey(),
@@ -123,6 +124,7 @@ export const clubEventAttendance = pgTable('club_event_attendance', {
 export const clubRoleRelation = relations(clubRole, ({ many, one }) => ({
   club: one(club, { fields: [clubRole.clubId], references: [club.id] }),
   members: many(clubMemberRole),
+  permitDiscounts: many(clubRolePermitDiscount),
 }))
 
 export const clubMemberRelations = relations(clubMember, ({ one, many }) => ({

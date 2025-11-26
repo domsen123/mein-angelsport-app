@@ -9,6 +9,8 @@ const clubSlug = computed(() => club.value?.slug || '')
 const {
   isEditMode,
   isCreateMode,
+  clubId,
+  groupId,
   state,
   roleData,
   isLoading,
@@ -129,6 +131,18 @@ const pageDescription = computed(() => {
         </div>
       </UFormField>
     </UPageCard>
+
+    <!-- Discounts Section (only in edit mode) -->
+    <template v-if="isEditMode && clubId && groupId">
+      <UPageCard
+        title="Erlaubnisschein Rabatte"
+        description="Rabatte auf Erlaubnisscheine für Mitglieder dieser Gruppe"
+        variant="naked"
+        orientation="horizontal"
+        class="mt-8 mb-4"
+      />
+      <ClubRoleDiscountSection :club-id="clubId" :role-id="groupId" />
+    </template>
 
     <UPageCard
       title="Mitglieder"

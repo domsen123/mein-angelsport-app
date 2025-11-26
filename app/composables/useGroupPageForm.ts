@@ -123,6 +123,8 @@ export const useGroupPageForm = () => {
     groupId,
     isCreateMode,
     isEditMode,
+    // Club
+    clubId,
     // State
     state,
     roleData,

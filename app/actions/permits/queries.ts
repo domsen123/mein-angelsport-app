@@ -1,4 +1,5 @@
 import type { GetPermitByIdCommand } from '~~/server/actions/permit/get-permit-by-id'
+import type { GetPermitOptionsByClubIdQuery } from '~~/server/actions/permit/get-permit-options-by-club-id'
 import type { GetPermitsByClubIdCommandInput } from '~~/server/actions/permit/get-permits-by-club-id'
 import type { GetPermitInstanceByIdCommand, GetPermitInstancesByPeriodIdCommand } from './api'
 import { usePermitClient } from './api'
@@ -10,6 +11,11 @@ export const PERMIT_QUERY_KEYS = {
     'by-club-id',
     args.clubId,
     JSON.stringify(args.pagination),
+  ] as const,
+  getPermitOptionsByClubId: (args: GetPermitOptionsByClubIdQuery) => [
+    ...PERMIT_QUERY_KEYS.root,
+    'options-by-club-id',
+    args.clubId,
   ] as const,
   getPermitById: (args: GetPermitByIdCommand) => [
     ...PERMIT_QUERY_KEYS.root,
@@ -44,6 +50,14 @@ export const usePermitsByClubIdQuery = ({ clubId, pagination }: GetPermitsByClub
   defineQueryOptions({
     key: PERMIT_QUERY_KEYS.getPermitsByClubId({ clubId, pagination }),
     query: () => usePermitClient().getPermitsByClubId({ clubId, pagination }),
+    enabled: !!clubId,
+    staleTime: 1000 * 60 * 20, // 20 minutes
+  })
+
+export const usePermitOptionsByClubIdQuery = ({ clubId }: GetPermitOptionsByClubIdQuery) =>
+  defineQueryOptions({
+    key: PERMIT_QUERY_KEYS.getPermitOptionsByClubId({ clubId }),
+    query: () => usePermitClient().getPermitOptionsByClubId({ clubId }),
     enabled: !!clubId,
     staleTime: 1000 * 60 * 20, // 20 minutes
   })

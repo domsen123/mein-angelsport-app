@@ -13,6 +13,7 @@ import type {
 } from './api'
 import { usePermitClient } from './api'
 import { PERMIT_QUERY_KEYS } from './queries'
+import { CLUB_ROLE_DISCOUNT_QUERY_KEYS } from '~/actions/clubRoleDiscounts/queries'
 
 // Permit mutations
 export function useCreatePermitMutation() {
@@ -85,6 +86,8 @@ export function useDeletePermitOptionMutation() {
     mutation: (input: DeletePermitOptionCommand) => client.deletePermitOption(input),
     onSuccess(_data, variables) {
       queryCache.invalidateQueries({ key: PERMIT_QUERY_KEYS.getPermitById({ clubId: variables.clubId, permitId: variables.permitId }) })
+      // Invalidate all discount queries for this club since the deleted option may have had discounts
+      queryCache.invalidateQueries({ key: [...CLUB_ROLE_DISCOUNT_QUERY_KEYS.root] })
     },
   })
 }

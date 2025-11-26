@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm'
 import { index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { user } from './auth.schema'
-import { club, clubMember } from './club.schema'
+import { club, clubMember, clubRole } from './club.schema'
 import { water } from './water.schema'
 
 export const permit = pgTable('permit', {
@@ -107,6 +107,24 @@ export const permitInstance = pgTable('permit_instance', {
   index('permit_instance__owner_member_id_idx').on(t.ownerMemberId),
 ])
 
+export const clubRolePermitDiscount = pgTable('club_role_permit_discount', {
+  id: text('id').primaryKey(),
+
+  clubRoleId: text('club_role_id').references(() => clubRole.id, { onDelete: 'cascade' }).notNull(),
+  permitOptionId: text('permit_option_id').references(() => permitOption.id, { onDelete: 'cascade' }).notNull(),
+
+  discountPercent: integer('discount_percent').notNull(), // 0-100
+
+  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+}, t => [
+  uniqueIndex('club_role_permit_discount__unique_idx').on(t.clubRoleId, t.permitOptionId),
+  index('club_role_permit_discount__club_role_id_idx').on(t.clubRoleId),
+  index('club_role_permit_discount__permit_option_id_idx').on(t.permitOptionId),
+])
+
 // Relations
 
 export const permitRelations = relations(permit, ({ one, many }) => ({
@@ -123,6 +141,7 @@ export const permitWaterRelations = relations(permitWater, ({ one }) => ({
 export const permitOptionRelations = relations(permitOption, ({ one, many }) => ({
   permit: one(permit, { fields: [permitOption.permitId], references: [permit.id] }),
   periods: many(permitOptionPeriod),
+  roleDiscounts: many(clubRolePermitDiscount),
 }))
 
 export const permitOptionPeriodRelations = relations(permitOptionPeriod, ({ one, many }) => ({
@@ -134,4 +153,9 @@ export const permitInstanceRelations = relations(permitInstance, ({ one }) => ({
   optionPeriod: one(permitOptionPeriod, { fields: [permitInstance.permitOptionPeriodId], references: [permitOptionPeriod.id] }),
   buyer: one(user, { fields: [permitInstance.buyerId], references: [user.id] }),
   ownerMember: one(clubMember, { fields: [permitInstance.ownerMemberId], references: [clubMember.id] }),
+}))
+
+export const clubRolePermitDiscountRelations = relations(clubRolePermitDiscount, ({ one }) => ({
+  clubRole: one(clubRole, { fields: [clubRolePermitDiscount.clubRoleId], references: [clubRole.id] }),
+  permitOption: one(permitOption, { fields: [clubRolePermitDiscount.permitOptionId], references: [permitOption.id] }),
 }))

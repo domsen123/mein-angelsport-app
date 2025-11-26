@@ -1,5 +1,6 @@
 import type { CreatePermitCommand } from '~~/server/actions/permit/create-permit'
 import type { GetPermitByIdCommand } from '~~/server/actions/permit/get-permit-by-id'
+import type { GetPermitOptionsByClubIdQuery, GetPermitOptionsByClubIdResponse } from '~~/server/actions/permit/get-permit-options-by-club-id'
 import type { GetPermitsByClubIdCommandInput } from '~~/server/actions/permit/get-permits-by-club-id'
 
 export interface UpdatePermitCommand {
@@ -119,6 +120,11 @@ export const usePermitClient = () => {
       query: { ...pagination },
     })
 
+  const getPermitOptionsByClubId = ({ clubId }: GetPermitOptionsByClubIdQuery) =>
+    $api<GetPermitOptionsByClubIdResponse>(`/api/club/${clubId}/_admin/permit-options`, {
+      method: 'GET',
+    })
+
   const getPermitById = ({ clubId, permitId }: GetPermitByIdCommand) =>
     $api(`/api/club/${clubId}/_admin/permits/${permitId}`, {
       method: 'GET',
@@ -209,6 +215,7 @@ export const usePermitClient = () => {
 
   return {
     getPermitsByClubId,
+    getPermitOptionsByClubId,
     getPermitById,
     createPermit,
     updatePermit,
