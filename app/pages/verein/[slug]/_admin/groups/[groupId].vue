@@ -13,6 +13,7 @@ const {
   roleData,
   isLoading,
   isRoleLoading,
+  memberList,
   submit,
 } = useGroupPageForm()
 
@@ -128,5 +129,21 @@ const pageDescription = computed(() => {
         </div>
       </UFormField>
     </UPageCard>
+
+    <UPageCard
+      title="Mitglieder"
+      description="Mitglieder dieser Gruppe verwalten"
+      variant="naked"
+      orientation="horizontal"
+      class="mt-8 mb-4"
+    >
+    </UPageCard>
+    <UTable
+      :columns="[
+        { accessorKey: 'firstName', header: 'Vorname' },
+        { accessorKey: 'lastName', header: 'Nachname' },
+      ]"
+      :data="memberList"
+    />
   </UForm>
 </template>

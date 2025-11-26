@@ -34,12 +34,17 @@ export const useGroupPageForm = () => {
   // Get clubId
   const clubId = computed(() => club.value?.id)
   const clubSlug = computed(() => club.value?.slug)
+  const members = ref<string[]>([])
 
   // Fetch role data in edit mode
   const { data: roleData, isLoading: isRoleLoading } = useQuery(useClubRoleByIdQuery, () => ({
     clubId: clubId.value!,
     roleId: groupId.value!,
   }))
+
+  const memberList = computed(() => {
+    return roleData.value?.members.map(m => m.member) || []
+  })
 
   // Single watcher for form population
   watch([isCreateMode, roleData], ([isCreate, role]) => {
@@ -121,6 +126,8 @@ export const useGroupPageForm = () => {
     // State
     state,
     roleData,
+    members,
+    memberList,
     // Loading
     isLoading,
     isRoleLoading,

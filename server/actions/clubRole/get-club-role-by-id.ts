@@ -26,6 +26,20 @@ export const _getClubRoleById = async (
       eq(clubRole.id, roleId),
       eq(clubRole.clubId, clubId),
     ),
+    with: {
+      members: {
+        with: {
+          member: {
+            columns: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              userId: true,
+            },
+          },
+        },
+      },
+    },
   })
 
   if (!role) {
