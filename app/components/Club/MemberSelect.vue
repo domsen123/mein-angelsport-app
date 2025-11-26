@@ -1,4 +1,6 @@
 <script lang="ts" setup generic="T extends boolean">
+// This component is heavy WIP
+
 interface MemberSelectProps {
   modelValue: T extends true ? string[] | undefined : string | undefined
   multiple?: T

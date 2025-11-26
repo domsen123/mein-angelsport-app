@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import type { DiscountItem } from '~/actions/clubRoleDiscounts/api'
-import { usePermitOptionsByClubIdQuery } from '~/actions/permits/queries'
-import { useDiscountsByRoleIdQuery } from '~/actions/clubRoleDiscounts/queries'
 import {
   useCreateDiscountMutation,
   useDeleteDiscountMutation,
   useUpdateDiscountMutation,
 } from '~/actions/clubRoleDiscounts/mutations'
+import { useDiscountsByRoleIdQuery } from '~/actions/clubRoleDiscounts/queries'
+import { usePermitOptionsByClubIdQuery } from '~/actions/permits/queries'
 
 const props = defineProps<{
   clubId: string
