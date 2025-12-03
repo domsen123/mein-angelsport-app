@@ -42,9 +42,9 @@ export interface ExecutionContext {
  * })
  * ```
  */
-export function createExecutionContext(event: H3Event & { context: { user: AppUser } }): ExecutionContext {
+export function createExecutionContext(event: H3Event & { context: { user?: AppUser } }): ExecutionContext {
   return {
-    userId: event.context.user.id,
+    userId: event.context.user?.id || '',
     timestamp: new Date(),
   }
 }

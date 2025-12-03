@@ -44,6 +44,10 @@ export const clubMember = pgTable('club_member', {
 
   preferredInvoicingMethod: text('preferred_invoicing_method', { enum: ['email', 'postal_mail'] }).default('email').notNull(),
 
+  // Member validation token for account linking
+  validationToken: text('validation_token'),
+  validationTokenExpiresAt: timestamp('validation_token_expires_at', { mode: 'date', withTimezone: true }),
+
   createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
   createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),

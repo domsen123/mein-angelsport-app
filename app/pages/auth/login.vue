@@ -40,7 +40,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       email,
       password,
     })
-    navigateTo('/')
+    await navigateTo('/')
   }
   catch (error: any) {
     console.error('Sign Up Error:', error)

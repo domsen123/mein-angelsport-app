@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { getEventsByClubId } from '~~/server/actions/clubEvent/get-events-by-club-id'
 import { createExecutionContext } from '~~/server/types/ExecutionContext'
 
-export default defineAuthenticatedEventHandler(async (event) => {
+export default defineEventHandler(async (event) => {
   const context = createExecutionContext(event)
+  console.log(context)
 
   const { id: clubId } = await getValidatedRouterParams(event, params => z.object({
     id: ulidSchema,

@@ -4,6 +4,13 @@ import { doDatabaseOperation } from '~~/server/database/helper'
 import { clubMember, clubMemberRole, clubRole } from '~~/server/database/schema'
 
 export const _getClubMembership = async (clubId: string, userId: string, tx?: DatabaseClient) => doDatabaseOperation(async (db) => {
+  const isMember = await db.query.clubMember.findFirst({
+    where: (member, { and, eq }) => and(
+      eq(member.clubId, clubId),
+      eq(member.userId, userId),
+    ),
+  })
+
   const memberRoles = await db
     .select({
       ...getTableColumns(clubRole),
@@ -16,8 +23,24 @@ export const _getClubMembership = async (clubId: string, userId: string, tx?: Da
       eq(clubMember.userId, userId),
     ))
 
+  const roles = memberRoles
+  if (isMember) {
+    roles.push({
+      id: 'member',
+      name: 'Mitglied',
+      description: 'Standard Mitgliedsrolle',
+      isClubAdmin: false,
+      clubId,
+      isExemptFromWorkDuties: false,
+      createdAt: isMember.createdAt,
+      updatedAt: isMember.updatedAt,
+      createdBy: isMember.createdBy,
+      updatedBy: isMember.updatedBy,
+    })
+  }
+
   return {
     hasAdminRole: memberRoles.some(role => role.isClubAdmin),
-    roles: memberRoles,
+    roles,
   }
 }, tx)

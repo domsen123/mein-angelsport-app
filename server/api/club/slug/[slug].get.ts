@@ -1,7 +1,7 @@
 import { APIError } from 'better-auth'
 import z from 'zod'
 import { getClubBySlug } from '~~/server/actions/club/get-club-by-slug'
-import { createExecutionContext } from '~~/server/types/ExecutionContext'
+import { createAnonymousExecutionContext, createExecutionContext } from '~~/server/types/ExecutionContext'
 
 export const GetClubBySlugCommandSchema = z.object({
   slug: slugSchema,
@@ -9,7 +9,7 @@ export const GetClubBySlugCommandSchema = z.object({
 
 export type GetClubBySlugCommand = z.infer<typeof GetClubBySlugCommandSchema>
 
-export default defineAuthenticatedEventHandler(async (event) => {
+export default defineEventHandler(async (event) => {
   const { slug } = await getValidatedRouterParams(event, params => GetClubBySlugCommandSchema.parse(params))
   const context = createExecutionContext(event)
   try {
