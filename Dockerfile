@@ -1,5 +1,5 @@
 # Build Stage 1
-FROM node:22-alpine AS AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Copy package.json and your lockfile, here we add pnpm-lock.yaml for illustration
