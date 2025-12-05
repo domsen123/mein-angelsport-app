@@ -2,6 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { club, clubSlug, isLoading, isClubMember, isClubAdmin } = useClub()
+const { setNavigation } = useMobileNavigation()
 
 const navigation = computed<NavigationMenuItem[][]>(() => [
   [
@@ -23,6 +24,8 @@ const navigation = computed<NavigationMenuItem[][]>(() => [
       ]
     : [],
 ])
+
+watch(navigation, (val) => setNavigation(val), { immediate: true })
 </script>
 
 <template>

@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 const authStore = useAuthStore()
 const { currentUser } = storeToRefs(authStore)
+
+const { navigation } = useMobileNavigation()
 </script>
 
 <template>
@@ -18,6 +20,9 @@ const { currentUser } = storeToRefs(authStore)
           <UButton label="Registrieren" variant="ghost" to="/auth/register" />
           <UButton label="Anmelden" variant="subtle" to="/auth/login" />
         </template>
+      </template>
+      <template #body>
+        <UNavigationMenu :items="navigation" orientation="vertical" />
       </template>
     </UHeader>
     <UMain>
