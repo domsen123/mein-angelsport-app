@@ -23,7 +23,7 @@ WORKDIR /app
 
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output/ ./
-COPY --from=build /app/server/config ./server/config
+COPY --from=build /app/server/config.ts ./server
 COPY --from=build /app/server/database ./server/database
 COPY --from=build /app/drizzle.config.ts ./
 
