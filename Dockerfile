@@ -1,5 +1,5 @@
 # Build Stage 1
-FROM docker-registry.dim.ve-ict.net/vinci-energies/node:latest AS build
+FROM node:22-alpine AS AS build
 WORKDIR /app
 
 # Copy package.json and your lockfile, here we add pnpm-lock.yaml for illustration
@@ -16,7 +16,7 @@ RUN pnpm run build
 
 # Build Stage 2
 
-FROM docker-registry.dim.ve-ict.net/vinci-energies/node:latest
+FROM node:22-alpine AS
 WORKDIR /app
 
 # Only `.output` folder is needed from the build stage
